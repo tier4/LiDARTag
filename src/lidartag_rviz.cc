@@ -952,9 +952,9 @@ void LiDARTag::_clusterToPclVectorAndMarkerPublisher(
       }
     }
     if (_id_decoding) {
-      addCorners(_tag_corners, Cluster[Key]);
-      getBoundaryCorners(Cluster[Key], BoundaryPts);
-      addBoundaryCorners(_tag_boundary_corners, Cluster[Key]);
+      addCorners(Cluster[Key]);
+      // getBoundaryCorners(Cluster[Key], BoundaryPts);
+      addBoundaryCorners(Cluster[Key]);
     }
     // Publish to a lidartag channel
     _detectionArrayPublisher(Cluster[Key]);
@@ -969,11 +969,22 @@ void LiDARTag::_clusterToPclVectorAndMarkerPublisher(
   pub_corners_array_.frame_index = _point_cloud_header.seq;
   _boundary_corners_array_.header = _point_cloud_header;
   _boundary_corners_array_.frame_index = _point_cloud_header.seq;
+
   // cout << "BoundaryMarkerList size/10: " <<
   // BoundaryMarkerList.points.size()/10 << endl;
   _corners_array_pub.publish(pub_corners_array_);
   _boundary_corners_array_pub.publish(_boundary_corners_array_);
   _boundary_marker_pub.publish(BoundMarkArray);
+  _bottom_left_corners_pub.publish(_bottom_left_marker_array);
+  _bottom_right_corners_pub.publish(_bottom_right_marker_array);
+  _top_right_corners_pub.publish(_top_right_marker_array);
+  _top_left_corners_pub.publish(_top_left_marker_array);
+  _center_points_pub.publish(_center_marker_array);
+  _bottom_left_boundary_corners_pub.publish(_bottom_left_boundary_marker_array);
+  _bottom_right_boundary_corners_pub.publish(_bottom_right_boundary_marker_array);
+  _top_right_boundary_corners_pub.publish(_top_left_boundary_marker_array);
+  _top_left_boundary_corners_pub.publish(_top_right_boundary_marker_array);
+  _center_boundary_points_pub.publish(_center_boundary_marker_array);
   _cluster_marker_pub.publish(ClusterArray);
   _payload_marker_pub.publish(PayloadMarkArray);
   _id_marker_pub.publish(IDMarkArray);
@@ -1091,124 +1102,135 @@ void LiDARTag::publishClusterInfo(const ClusterFamily_t cluster)
 void LiDARTag::getBoundaryCorners(
   ClusterFamily_t cluster, pcl::PointCloud<PointXYZRI>::Ptr boundaryPts)
 {
-  Eigen::Vector4f line1;
-  Eigen::Vector4f line2;
-  Eigen::Vector4f line3;
-  Eigen::Vector4f line4;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud3(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud4(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud1(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud2(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud3(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud4(new pcl::PointCloud<pcl::PointXYZ>);
+  // Eigen::Vector4f line1;
+  // Eigen::Vector4f line2;
+  // Eigen::Vector4f line3;
+  // Eigen::Vector4f line4;
+  // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1(new pcl::PointCloud<pcl::PointXYZ>);
+  // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2(new pcl::PointCloud<pcl::PointXYZ>);
+  // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud3(new pcl::PointCloud<pcl::PointXYZ>);
+  // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud4(new pcl::PointCloud<pcl::PointXYZ>);
+  // pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud1(new pcl::PointCloud<pcl::PointXYZ>);
+  // pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud2(new pcl::PointCloud<pcl::PointXYZ>);
+  // pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud3(new pcl::PointCloud<pcl::PointXYZ>);
+  // pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud4(new pcl::PointCloud<pcl::PointXYZ>);
 
-  cloud1->points.resize(boundaryPts->points.size());
-  cloud1->clear();
-  cloud2->points.resize(boundaryPts->points.size());
-  cloud2->clear();
-  cloud3->points.resize(boundaryPts->points.size());
-  cloud3->clear();
-  cloud4->points.resize(boundaryPts->points.size());
-  cloud4->clear();
-  line_cloud1->points.resize(boundaryPts->points.size());
-  line_cloud1->clear();
-  line_cloud2->points.resize(boundaryPts->points.size());
-  line_cloud2->clear();
-  line_cloud3->points.resize(boundaryPts->points.size());
-  line_cloud3->clear();
-  line_cloud4->points.resize(boundaryPts->points.size());
-  line_cloud4->clear();
+  // cloud1->points.resize(boundaryPts->points.size());
+  // cloud1->clear();
+  // cloud2->points.resize(boundaryPts->points.size());
+  // cloud2->clear();
+  // cloud3->points.resize(boundaryPts->points.size());
+  // cloud3->clear();
+  // cloud4->points.resize(boundaryPts->points.size());
+  // cloud4->clear();
+  // line_cloud1->points.resize(boundaryPts->points.size());
+  // line_cloud1->clear();
+  // line_cloud2->points.resize(boundaryPts->points.size());
+  // line_cloud2->clear();
+  // line_cloud3->points.resize(boundaryPts->points.size());
+  // line_cloud3->clear();
+  // line_cloud4->points.resize(boundaryPts->points.size());
+  // line_cloud4->clear();
 
-  for (size_t i = 0; i < boundaryPts->points.size(); i++) {
-    Eigen::Vector3f edge_point(
-      boundaryPts->points[i].x - cluster.average.x, boundaryPts->points[i].y - cluster.average.y,
-      boundaryPts->points[i].z - cluster.average.z);
-    Eigen::Matrix<float, 3, 3, Eigen::DontAlign> transform_matrix = cluster.principal_axes;
-    transform_matrix = (transform_matrix.transpose()).eval();
-    Eigen::Vector3f transformed_edge_point = transform_matrix * edge_point;
-    pcl::PointXYZ p;
-    p.x = transformed_edge_point(0);
-    p.y = transformed_edge_point(1);
-    p.z = 0;
-    LiDARPoints_t group_point;
-    group_point.point = boundaryPts->points[i];
-    if (transformed_edge_point(0) > 0) {
-      if (transformed_edge_point(1) > 0) {
-        cloud1->points.push_back(p);
-        group_point.point.intensity = 0;
-        cluster.edge_group1.push_back(group_point);
-      } else {
-        cloud2->points.push_back(p);
-        group_point.point.intensity = 85;
-        cluster.edge_group2.push_back(group_point);
-      }
-    } else {
-      if (transformed_edge_point(1) > 0) {
-        cloud4->points.push_back(p);
-        group_point.point.intensity = 170;
-        cluster.edge_group4.push_back(group_point);
-      } else {
-        cloud3->points.push_back(p);
-        group_point.point.intensity = 255;
-        cluster.edge_group3.push_back(group_point);
-      }
-    }
-  }
-  if (!LiDARTag::_getLines(cloud1, line1, line_cloud1))
-    ROS_WARN_STREAM("Can not get boundary line1");
+  // for (size_t i = 0; i < boundaryPts->points.size(); i++) {
+  //   Eigen::Vector3f edge_point(
+  //     boundaryPts->points[i].x - cluster.average.x, boundaryPts->points[i].y - cluster.average.y,
+  //     boundaryPts->points[i].z - cluster.average.z);
+  //   Eigen::Matrix<float, 3, 3, Eigen::DontAlign> transform_matrix = cluster.principal_axes;
+  //   transform_matrix = (transform_matrix.transpose()).eval();
+  //   Eigen::Vector3f transformed_edge_point = transform_matrix * edge_point;
+  //   pcl::PointXYZ p;
+  //   p.x = transformed_edge_point(0);
+  //   p.y = transformed_edge_point(1);
+  //   p.z = 0;
+  //   LiDARPoints_t group_point;
+  //   group_point.point = boundaryPts->points[i];
+  //   if (transformed_edge_point(0) > 0) {
+  //     if (transformed_edge_point(1) > 0) {
+  //       cloud1->points.push_back(p);
+  //       group_point.point.intensity = 0;
+  //       cluster.edge_group1.push_back(group_point);
+  //     } else {
+  //       cloud2->points.push_back(p);
+  //       group_point.point.intensity = 85;
+  //       cluster.edge_group2.push_back(group_point);
+  //     }
+  //   } else {
+  //     if (transformed_edge_point(1) > 0) {
+  //       cloud4->points.push_back(p);
+  //       group_point.point.intensity = 170;
+  //       cluster.edge_group4.push_back(group_point);
+  //     } else {
+  //       cloud3->points.push_back(p);
+  //       group_point.point.intensity = 255;
+  //       cluster.edge_group3.push_back(group_point);
+  //     }
+  //   }
+  // }
+  // if (!LiDARTag::_getLines(cloud1, line1, line_cloud1))
+  //   ROS_WARN_STREAM("Can not get boundary line1");
 
-  if (!LiDARTag::_getLines(cloud2, line2, line_cloud2))
-    ROS_WARN_STREAM("Can not get boundary line2");
+  // if (!LiDARTag::_getLines(cloud2, line2, line_cloud2))
+  //   ROS_WARN_STREAM("Can not get boundary line2");
 
-  if (!LiDARTag::_getLines(cloud3, line3, line_cloud3))
-    ROS_WARN_STREAM("Can not get boundary line3");
+  // if (!LiDARTag::_getLines(cloud3, line3, line_cloud3))
+  //   ROS_WARN_STREAM("Can not get boundary line3");
 
-  if (!LiDARTag::_getLines(cloud4, line4, line_cloud4))
-    ROS_WARN_STREAM("Can not get boundary line4");
+  // if (!LiDARTag::_getLines(cloud4, line4, line_cloud4))
+  //   ROS_WARN_STREAM("Can not get boundary line4");
 
-  Eigen::Vector3f intersection1 = LiDARTag::_getintersec(line1, line2);
-  Eigen::Vector3f intersection2 = LiDARTag::_getintersec(line2, line3);
-  Eigen::Vector3f intersection3 = LiDARTag::_getintersec(line3, line4);
-  Eigen::Vector3f intersection4 = LiDARTag::_getintersec(line1, line4);
-  Eigen::MatrixXf payload_vertices(3, 4);
-  payload_vertices.col(0) = cluster.principal_axes * intersection1;
-  payload_vertices.col(1) = cluster.principal_axes * intersection2;
-  payload_vertices.col(2) = cluster.principal_axes * intersection3;
-  payload_vertices.col(3) = cluster.principal_axes * intersection4;
+  // Eigen::Vector3f intersection1 = LiDARTag::_getintersec(line1, line2);
+  // Eigen::Vector3f intersection2 = LiDARTag::_getintersec(line2, line3);
+  // Eigen::Vector3f intersection3 = LiDARTag::_getintersec(line3, line4);
+  // Eigen::Vector3f intersection4 = LiDARTag::_getintersec(line1, line4);
+  // Eigen::MatrixXf payload_vertices(3, 4);
+  // payload_vertices.col(0) = cluster.principal_axes * intersection1;
+  // payload_vertices.col(1) = cluster.principal_axes * intersection2;
+  // payload_vertices.col(2) = cluster.principal_axes * intersection3;
+  // payload_vertices.col(3) = cluster.principal_axes * intersection4;
 
-  Eigen::MatrixXf ordered_payload_vertices = _getOrderedCorners(payload_vertices, cluster);
-  Eigen::MatrixXf Vertices = Eigen::MatrixXf::Zero(3, 5);
-  utils::formGrid(Vertices, 0, 0, 0, cluster.tag_size);
-  Eigen::Matrix3f R;
-  std::vector<Eigen::MatrixXf> mats;
-  mats = utils::fitGrid_new(Vertices, R, ordered_payload_vertices);
+  // Eigen::MatrixXf ordered_payload_vertices = _getOrderedCorners(payload_vertices, cluster);
+  // Eigen::MatrixXf Vertices = Eigen::MatrixXf::Zero(3, 5);
+  // utils::formGrid(Vertices, 0, 0, 0, cluster.tag_size);
+  // Eigen::Matrix3f R;
+  // std::vector<Eigen::MatrixXf> mats;
+  // mats = utils::fitGrid_new(Vertices, R, ordered_payload_vertices);
 
-  Eigen::MatrixXf::Index col;
-  payload_vertices.row(1).minCoeff(&col);
-  utils::eigen2Corners(payload_vertices.col(col), _tag_boundary_corners.right);
+  // Eigen::MatrixXf::Index col;
 
-  payload_vertices.row(1).maxCoeff(&col);
-  utils::eigen2Corners(payload_vertices.col(col), _tag_boundary_corners.left);
-
-  payload_vertices.row(2).minCoeff(&col);
-  utils::eigen2Corners(payload_vertices.col(col), _tag_boundary_corners.down);
-
-  payload_vertices.row(2).maxCoeff(&col);
-  utils::eigen2Corners(payload_vertices.col(col), _tag_boundary_corners.top);
+  // utils::eigen2Corners(ordered_payload_vertices.col(0), _tag_boundary_corners.top);
+  // utils::eigen2Corners(ordered_payload_vertices.col(1), _tag_boundary_corners.left);
+  // utils::eigen2Corners(ordered_payload_vertices.col(2), _tag_boundary_corners.down);
+  // utils::eigen2Corners(ordered_payload_vertices.col(3), _tag_boundary_corners.right);
 }
 
-void LiDARTag::addCorners(corners tag_corners, ClusterFamily_t cluster)
+void LiDARTag::addCorners(ClusterFamily_t cluster)
 {
-  visualization_msgs::Marker marker, left_marker, right_marker, top_marker, down_marker;
   lidartag_msgs::Corners pub_corners;
+
+  vector<vector<int>> vertex = {{1, 1}, {1, -1}, {-1, -1}, {-1, 1}};
+  for (int i = 0; i < 4; ++i) {
+    vector<int> v = vertex[i];
+    Eigen::Vector4f corner_lidar(0.0, v[0] * cluster.tag_size / 2, v[1] * cluster.tag_size / 2, 1);
+    Eigen::Vector4f corner_tag = cluster.pose.homogeneous * corner_lidar;
+    geometry_msgs::Point p;
+    p.x = corner_tag(0);
+    p.y = corner_tag(1);  //_payload_size
+    p.z = corner_tag(2);
+    if (i == 0) pub_corners.bottom_left = p;
+    if (i == 1) pub_corners.bottom_right = p;
+    if (i == 2) pub_corners.top_right = p;
+    if (i == 3) pub_corners.top_left = p;
+  }
+
+  visualization_msgs::Marker marker, bottom_left_marker, bottom_right_marker, top_right_marker,
+    top_left_marker, center_marker;
   marker.header.frame_id = _pub_frame;
   marker.header.stamp = ros::Time::now();
   pub_corners.header = marker.header;
   pub_corners.id = cluster.cluster_id;
   pub_corners.frame_index = _point_cloud_header.seq;
-  marker.id = 0;
+  marker.id = cluster.cluster_id;
   marker.type = visualization_msgs::Marker::SPHERE;
   marker.action = visualization_msgs::Marker::ADD;
   marker.lifetime = ros::Duration(0.1);
@@ -1220,60 +1242,91 @@ void LiDARTag::addCorners(corners tag_corners, ClusterFamily_t cluster)
   marker.scale.y = 0.1;
   marker.scale.z = 0.1;
   marker.color.a = 1.0;  // Don't forget to set the alpha!
-  left_marker = right_marker = top_marker = down_marker = marker;
+  bottom_left_marker = bottom_right_marker = top_right_marker = top_left_marker = center_marker =
+    marker;
 
-  left_marker.ns = "tag_left_corners";
-  left_marker.pose.position.x = tag_corners.left.x + cluster.average.x;
-  left_marker.pose.position.y = tag_corners.left.y + cluster.average.y;
-  left_marker.pose.position.z = tag_corners.left.z + cluster.average.z;
-  pub_corners.left = left_marker.pose.position;
-  left_marker.color.r = 1.0;
-  left_marker.color.g = 0.0;
-  left_marker.color.b = 0.0;
-  _left_corners_pub.publish(left_marker);
+  bottom_left_marker.ns = "tag_bottom_left_corners";
+  bottom_left_marker.pose.position.x = pub_corners.bottom_left.x;
+  bottom_left_marker.pose.position.y = pub_corners.bottom_left.y;
+  bottom_left_marker.pose.position.z = pub_corners.bottom_left.z;
+  pub_corners.bottom_left = bottom_left_marker.pose.position;
+  bottom_left_marker.color.r = 1.0;
+  bottom_left_marker.color.g = 0.0;
+  bottom_left_marker.color.b = 0.0;
+  _bottom_left_marker_array.markers.push_back(bottom_left_marker);
 
-  right_marker.ns = "tag_right_corners";
-  right_marker.pose.position.x = tag_corners.right.x + cluster.average.x;
-  right_marker.pose.position.y = tag_corners.right.y + cluster.average.y;
-  right_marker.pose.position.z = tag_corners.right.z + cluster.average.z;
-  pub_corners.right = right_marker.pose.position;
-  right_marker.color.r = 0.0;
-  right_marker.color.g = 0.0;
-  right_marker.color.b = 1.0;
-  _right_corners_pub.publish(right_marker);
+  bottom_right_marker.ns = "tag_bottom_right_corners";
+  bottom_right_marker.pose.position.x = pub_corners.bottom_right.x;
+  bottom_right_marker.pose.position.y = pub_corners.bottom_right.y;
+  bottom_right_marker.pose.position.z = pub_corners.bottom_right.z;
+  pub_corners.bottom_right = bottom_right_marker.pose.position;
+  bottom_right_marker.color.r = 0.0;
+  bottom_right_marker.color.g = 0.0;
+  bottom_right_marker.color.b = 1.0;
+  _bottom_right_marker_array.markers.push_back(bottom_right_marker);
 
-  down_marker.ns = "tag_down_corners";
-  down_marker.pose.position.x = tag_corners.down.x + cluster.average.x;
-  down_marker.pose.position.y = tag_corners.down.y + cluster.average.y;
-  down_marker.pose.position.z = tag_corners.down.z + cluster.average.z;
-  pub_corners.down = down_marker.pose.position;
-  down_marker.color.r = 0.0;
-  down_marker.color.g = 1.0;
-  down_marker.color.b = 0.0;
-  _down_corners_pub.publish(down_marker);
+  top_right_marker.ns = "tag_top_right_corners";
+  top_right_marker.pose.position.x = pub_corners.top_right.x;
+  top_right_marker.pose.position.y = pub_corners.top_right.y;
+  top_right_marker.pose.position.z = pub_corners.top_right.z;
+  pub_corners.top_right = top_right_marker.pose.position;
+  top_right_marker.color.r = 0.0;
+  top_right_marker.color.g = 1.0;
+  top_right_marker.color.b = 0.0;
+  _top_right_marker_array.markers.push_back(top_right_marker);
 
-  top_marker.ns = "tag_top_corners";
-  top_marker.pose.position.x = tag_corners.top.x + cluster.average.x;
-  top_marker.pose.position.y = tag_corners.top.y + cluster.average.y;
-  top_marker.pose.position.z = tag_corners.top.z + cluster.average.z;
-  pub_corners.top = top_marker.pose.position;
-  top_marker.color.r = 1.0;
-  top_marker.color.g = 0.0;
-  top_marker.color.b = 1.0;
-  _top_corners_pub.publish(top_marker);
+  top_left_marker.ns = "tag_top_left_corners";
+  top_left_marker.pose.position.x = pub_corners.top_left.x;
+  top_left_marker.pose.position.y = pub_corners.top_left.y;
+  top_left_marker.pose.position.z = pub_corners.top_left.z;
+  pub_corners.top_left = top_left_marker.pose.position;
+  top_left_marker.color.r = 1.0;
+  top_left_marker.color.g = 0.0;
+  top_left_marker.color.b = 1.0;
+  _top_left_marker_array.markers.push_back(top_left_marker);
+
+  //TODO:remove center point
+  pub_corners.center.x = cluster.average.x;
+  pub_corners.center.y = cluster.average.y;
+  pub_corners.center.z = cluster.average.z;
+  center_marker.ns = "tag_center_corners";
+  center_marker.pose.position.x = cluster.average.x;
+  center_marker.pose.position.y = cluster.average.y;
+  center_marker.pose.position.z = cluster.average.z;
+  center_marker.color.r = 1.0;
+  center_marker.color.g = 0.0;
+  center_marker.color.b = 1.0;
+  _center_marker_array.markers.push_back(center_marker);
 
   pub_corners_array_.corners.push_back(pub_corners);
 }
 
-void LiDARTag::addBoundaryCorners(corners tag_corners, ClusterFamily_t cluster)
+void LiDARTag::addBoundaryCorners(ClusterFamily_t cluster)
 {
-  visualization_msgs::Marker marker, left_marker, right_marker, top_marker, down_marker;
   lidartag_msgs::Corners pub_corners;
+  vector<vector<float>> vertex = {{0.75, 0.75}, {0.75, -0.75}, {-0.75, -0.75}, {-0.75, 0.75}};
+  for (int i = 0; i < 4; ++i) {
+    vector<float> v = vertex[i];
+    Eigen::Vector4f corner_lidar(0.0, v[0] * cluster.tag_size / 2, v[1] * cluster.tag_size / 2, 1);
+    Eigen::Vector4f corner_tag = cluster.pose.homogeneous * corner_lidar;
+    geometry_msgs::Point p;
+    p.x = corner_tag(0);
+    p.y = corner_tag(1);  //_payload_size
+    p.z = corner_tag(2);
+    if (i == 0) pub_corners.bottom_left = p;
+    if (i == 1) pub_corners.bottom_right = p;
+    if (i == 2) pub_corners.top_right = p;
+    if (i == 3) pub_corners.top_left = p;
+  }
+
+  visualization_msgs::Marker marker, bottom_left_marker, bottom_right_marker, top_right_marker,
+    top_left_marker, center_marker;
   marker.header.frame_id = _pub_frame;
   marker.header.stamp = ros::Time::now();
   pub_corners.header = marker.header;
   pub_corners.id = cluster.cluster_id;
-  marker.id = 0;
+  pub_corners.frame_index = _point_cloud_header.seq;
+  marker.id = cluster.cluster_id;
   marker.type = visualization_msgs::Marker::SPHERE;
   marker.action = visualization_msgs::Marker::ADD;
   marker.lifetime = ros::Duration(0.1);
@@ -1285,47 +1338,61 @@ void LiDARTag::addBoundaryCorners(corners tag_corners, ClusterFamily_t cluster)
   marker.scale.y = 0.1;
   marker.scale.z = 0.1;
   marker.color.a = 1.0;  // Don't forget to set the alpha!
-  left_marker = right_marker = top_marker = down_marker = marker;
+  bottom_left_marker = bottom_right_marker = top_right_marker = top_left_marker = center_marker =
+    marker;
 
-  left_marker.ns = "tag_left_boundary_corners";
-  left_marker.pose.position.x = tag_corners.left.x + cluster.average.x;
-  left_marker.pose.position.y = tag_corners.left.y + cluster.average.y;
-  left_marker.pose.position.z = tag_corners.left.z + cluster.average.z;
-  pub_corners.left = left_marker.pose.position;
-  left_marker.color.r = 1.0;
-  left_marker.color.g = 0.0;
-  left_marker.color.b = 0.0;
-  _left_boundary_corners_pub.publish(left_marker);
+  bottom_left_marker.ns = "tag_bottom_left_boundary_corners";
+  bottom_left_marker.pose.position.x = pub_corners.bottom_left.x;
+  bottom_left_marker.pose.position.y = pub_corners.bottom_left.y;
+  bottom_left_marker.pose.position.z = pub_corners.bottom_left.z;
+  pub_corners.bottom_left = bottom_left_marker.pose.position;
+  bottom_left_marker.color.r = 1.0;
+  bottom_left_marker.color.g = 0.0;
+  bottom_left_marker.color.b = 0.0;
+  _bottom_left_boundary_marker_array.markers.push_back(bottom_left_marker);
 
-  right_marker.ns = "tag_right_boundary_corners";
-  right_marker.pose.position.x = tag_corners.right.x + cluster.average.x;
-  right_marker.pose.position.y = tag_corners.right.y + cluster.average.y;
-  right_marker.pose.position.z = tag_corners.right.z + cluster.average.z;
-  pub_corners.right = right_marker.pose.position;
-  right_marker.color.r = 0.0;
-  right_marker.color.g = 0.0;
-  right_marker.color.b = 1.0;
-  _right_boundary_corners_pub.publish(right_marker);
+  bottom_right_marker.ns = "tag_bottom_right_boundary_corners";
+  bottom_right_marker.pose.position.x = pub_corners.bottom_right.x;
+  bottom_right_marker.pose.position.y = pub_corners.bottom_right.y;
+  bottom_right_marker.pose.position.z = pub_corners.bottom_right.z;
+  pub_corners.bottom_right = bottom_right_marker.pose.position;
+  bottom_right_marker.color.r = 0.0;
+  bottom_right_marker.color.g = 0.0;
+  bottom_right_marker.color.b = 1.0;
+  _bottom_right_boundary_marker_array.markers.push_back(bottom_right_marker);
 
-  down_marker.ns = "tag_down_boundary_corners";
-  down_marker.pose.position.x = tag_corners.down.x + cluster.average.x;
-  down_marker.pose.position.y = tag_corners.down.y + cluster.average.y;
-  down_marker.pose.position.z = tag_corners.down.z + cluster.average.z;
-  pub_corners.down = down_marker.pose.position;
-  down_marker.color.r = 0.0;
-  down_marker.color.g = 1.0;
-  down_marker.color.b = 0.0;
-  _down_boundary_corners_pub.publish(down_marker);
+  top_right_marker.ns = "tag_top_right_boundary_corners";
+  top_right_marker.pose.position.x = pub_corners.top_right.x;
+  top_right_marker.pose.position.y = pub_corners.top_right.y;
+  top_right_marker.pose.position.z = pub_corners.top_right.z;
+  pub_corners.top_right = top_right_marker.pose.position;
+  top_right_marker.color.r = 0.0;
+  top_right_marker.color.g = 1.0;
+  top_right_marker.color.b = 0.0;
+  _top_right_boundary_marker_array.markers.push_back(top_right_marker);
 
-  top_marker.ns = "tag_top_boundary_corners";
-  top_marker.pose.position.x = tag_corners.top.x + cluster.average.x;
-  top_marker.pose.position.y = tag_corners.top.y + cluster.average.y;
-  top_marker.pose.position.z = tag_corners.top.z + cluster.average.z;
-  pub_corners.top = top_marker.pose.position;
-  top_marker.color.r = 1.0;
-  top_marker.color.g = 0.0;
-  top_marker.color.b = 1.0;
-  _top_boundary_corners_pub.publish(top_marker);
+  top_left_marker.ns = "tag_top_left_boundary_corners";
+  top_left_marker.pose.position.x = pub_corners.top_left.x;
+  top_left_marker.pose.position.y = pub_corners.top_left.y;
+  top_left_marker.pose.position.z = pub_corners.top_left.z;
+  pub_corners.top_left = top_left_marker.pose.position;
+  top_left_marker.color.r = 1.0;
+  top_left_marker.color.g = 0.0;
+  top_left_marker.color.b = 1.0;
+  _top_left_boundary_marker_array.markers.push_back(top_left_marker);
+
+  //TODO:remove center point
+  pub_corners.center.x = cluster.average.x;
+  pub_corners.center.y = cluster.average.y;
+  pub_corners.center.z = cluster.average.z;
+  center_marker.ns = "tag_center_boundary_corners";
+  center_marker.pose.position.x = cluster.average.x;
+  center_marker.pose.position.y = cluster.average.y;
+  center_marker.pose.position.z = cluster.average.z;
+  center_marker.color.r = 1.0;
+  center_marker.color.g = 0.0;
+  center_marker.color.b = 1.0;
+  _center_boundary_marker_array.markers.push_back(center_marker);
 
   _boundary_corners_array_.corners.push_back(pub_corners);
 }

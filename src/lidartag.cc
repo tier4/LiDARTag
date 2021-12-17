@@ -160,19 +160,25 @@ LiDARTag::LiDARTag()
   _before_transformed_edge_pc_pub =
     _nh.advertise<sensor_msgs::PointCloud2>("before_transformed_edge_pc", 10);
   _corners_array_pub = _nh.advertise<lidartag_msgs::CornersArray>("corners_array", 10);
-  _left_corners_pub = _nh.advertise<visualization_msgs::Marker>("left_corner", 10);
-  _right_corners_pub = _nh.advertise<visualization_msgs::Marker>("right_corner", 10);
-  _down_corners_pub = _nh.advertise<visualization_msgs::Marker>("down_corner", 10);
-  _top_corners_pub = _nh.advertise<visualization_msgs::Marker>("top_corner", 10);
+  _bottom_left_corners_pub =
+    _nh.advertise<visualization_msgs::MarkerArray>("bottom_left_corners", 10);
+  _bottom_right_corners_pub =
+    _nh.advertise<visualization_msgs::MarkerArray>("bottom_right_corners", 10);
+  _top_right_corners_pub = _nh.advertise<visualization_msgs::MarkerArray>("top_right_corners", 10);
+  _top_left_corners_pub = _nh.advertise<visualization_msgs::MarkerArray>("top_left_corners", 10);
+  _center_points_pub = _nh.advertise<visualization_msgs::MarkerArray>("center_point", 10);
   _boundary_corners_array_pub =
     _nh.advertise<lidartag_msgs::CornersArray>("boundary_corners_array", 10);
-  _left_boundary_corners_pub =
-    _nh.advertise<visualization_msgs::Marker>("left_boundary_corner", 10);
-  _right_boundary_corners_pub =
-    _nh.advertise<visualization_msgs::Marker>("right_boundary_corner", 10);
-  _down_boundary_corners_pub =
-    _nh.advertise<visualization_msgs::Marker>("down_boundary_corner", 10);
-  _top_boundary_corners_pub = _nh.advertise<visualization_msgs::Marker>("top_boundary_corner", 10);
+  _bottom_left_boundary_corners_pub =
+    _nh.advertise<visualization_msgs::MarkerArray>("bottom_left_boundary_corners", 10);
+  _bottom_right_boundary_corners_pub =
+    _nh.advertise<visualization_msgs::MarkerArray>("bottom_right_boundary_corners", 10);
+  _top_right_boundary_corners_pub =
+    _nh.advertise<visualization_msgs::MarkerArray>("top_right_boundary_corners", 10);
+  _top_left_boundary_corners_pub =
+    _nh.advertise<visualization_msgs::MarkerArray>("top_left_boundary_corners", 10);
+  _center_boundary_points_pub =
+    _nh.advertise<visualization_msgs::MarkerArray>("center_boundary_point", 10);
   _colored_cluster_buff_pub = _nh.advertise<sensor_msgs::PointCloud2>("colored_cluster_buff", 10);
   _ps_cluster_buff__pub =
     _nh.advertise<visualization_msgs::MarkerArray>("cluster_buff_points_size_markers", 10);
@@ -310,28 +316,39 @@ void LiDARTag::_mainLoop()
     _lidartag_pose_array.detections.clear();
     detectionsToPub.detections.clear();
     pub_corners_array_.corners.clear();
+    _bottom_left_marker_array.markers.clear();
+    _bottom_right_marker_array.markers.clear();
+    _top_right_marker_array.markers.clear();
+    _top_left_marker_array.markers.clear();
+    _center_marker_array.markers.clear();
+    _bottom_left_boundary_marker_array.markers.clear();
+    _bottom_right_boundary_marker_array.markers.clear();
+    _top_right_boundary_marker_array.markers.clear();
+    _top_left_boundary_marker_array.markers.clear();
+    _center_boundary_marker_array.markers.clear();
     _boundary_corners_array_.corners.clear();
     if (_debug_time) {
-      _timing = {std::chrono::steady_clock::now(),
-                 std::chrono::steady_clock::now(),
-                 std::chrono::steady_clock::now(),
-                 0,
-                 0,
-                 0,
-                 0,
-                 0,
-                 0,
-                 0,
-                 0,
-                 0,
-                 0,
-                 0,
-                 0,
-                 0,
-                 0,
-                 0,
-                 0,
-                 0};
+      _timing = {
+        std::chrono::steady_clock::now(),
+        std::chrono::steady_clock::now(),
+        std::chrono::steady_clock::now(),
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0};
     }
 
     if (_debug_decoding_time) {
@@ -1330,8 +1347,8 @@ void LiDARTag::_gradientAndGroupEdges(
           (point1.getVector3fMap() - Point1R.getVector3fMap()).norm());
 
         // push the detected point that is an edge into a buff
-        LiDARPoints_t lidar_points = {ordered_buff[i][j].point, ordered_buff[i][j].index, 1,
-                                      DepthGrad1, 0};
+        LiDARPoints_t lidar_points = {
+          ordered_buff[i][j].point, ordered_buff[i][j].index, 1, DepthGrad1, 0};
         edge_buff[i].push_back(lidar_points);
       }
       if (edge_flag == 2 || edge_flag == 3) {
@@ -1343,8 +1360,8 @@ void LiDARTag::_gradientAndGroupEdges(
           (Point2L.getVector3fMap() - point2.getVector3fMap()).norm() -
           (point2.getVector3fMap() - Point2R.getVector3fMap()).norm());
         // push the detected point that is an edge into a buff
-        LiDARPoints_t lidar_points = {ordered_buff[i][j + n - 1].point,
-                                      ordered_buff[i][j + n - 1].index, 1, DepthGrad2, 0};
+        LiDARPoints_t lidar_points = {
+          ordered_buff[i][j + n - 1].point, ordered_buff[i][j + n - 1].index, 1, DepthGrad2, 0};
         edge_buff[i].push_back(lidar_points);
       }
     }
@@ -2869,6 +2886,13 @@ bool LiDARTag::_transformSplitEdges(ClusterFamily_t & cluster)
   Eigen::Vector3f intersection2 = _getintersec(line2, line3);
   Eigen::Vector3f intersection3 = _getintersec(line3, line4);
   Eigen::Vector3f intersection4 = _getintersec(line1, line4);
+
+  Eigen::MatrixXf intersection_matrix;
+  intersection_matrix.col(0) = intersection1;
+  intersection_matrix.col(1) = intersection2;
+  intersection_matrix.col(2) = intersection3;
+  intersection_matrix.col(3) = intersection4;
+
   if (!_estimateTargetSize(cluster, intersection1, intersection2, intersection3, intersection4)) {
     cluster.detail_valid = 12;
     return false;
@@ -2896,8 +2920,8 @@ bool LiDARTag::_transformSplitEdges(ClusterFamily_t & cluster)
   transformed_edge_pc_msg.header.frame_id = _pub_frame;
   _transformed_edge_pc_pub.publish(transformed_edge_pc_msg);
 
-  std::vector<Eigen::VectorXf> intersection_list{intersection1, intersection2, intersection3,
-                                                 intersection4};
+  std::vector<Eigen::VectorXf> intersection_list{
+    intersection1, intersection2, intersection3, intersection4};
   publishIntersections(intersection_list);
   _intersection1 = intersection1;
   _intersection2 = intersection2;
@@ -2915,6 +2939,12 @@ bool LiDARTag::_transformSplitEdges(ClusterFamily_t & cluster)
   //       0.0829155;
 
   Eigen::MatrixXf ordered_payload_vertices = _getOrderedCorners(payload_vertices, cluster);
+
+  // utils::eigen2Corners(ordered_payload_vertices.col(0), _tag_corners.top);
+  // utils::eigen2Corners(ordered_payload_vertices.col(1), _tag_corners.left);
+  // utils::eigen2Corners(ordered_payload_vertices.col(2), _tag_corners.down);
+  // utils::eigen2Corners(ordered_payload_vertices.col(3), _tag_corners.right);
+
   Eigen::MatrixXf Vertices = Eigen::MatrixXf::Zero(3, 5);
   //   ordered_payload_vertices << -0.0151639, -0.629135, 0.0127609, 0.624599,
   //       -0.178287, -0.325841, 0.167202, 0.319495, 0.728342, -0.0662743,
@@ -2949,18 +2979,6 @@ bool LiDARTag::_transformSplitEdges(ClusterFamily_t & cluster)
   //                            "[", "]");
   // std::cout << "ordered payload vertices = " << std::endl;
   // std::cout << ordered_payload_vertices.format(mat_format) << std::endl;
-
-  ordered_payload_vertices.row(1).minCoeff(&col);
-  utils::eigen2Corners(ordered_payload_vertices.col(col), _tag_corners.right);
-
-  ordered_payload_vertices.row(1).maxCoeff(&col);
-  utils::eigen2Corners(ordered_payload_vertices.col(col), _tag_corners.left);
-
-  ordered_payload_vertices.row(2).minCoeff(&col);
-  utils::eigen2Corners(ordered_payload_vertices.col(col), _tag_corners.down);
-
-  ordered_payload_vertices.row(2).maxCoeff(&col);
-  utils::eigen2Corners(ordered_payload_vertices.col(col), _tag_corners.top);
 
   for (int i = 0; i < 4; ++i) {
     showpoint.intensity = 50;

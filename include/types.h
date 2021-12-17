@@ -28,27 +28,31 @@
  * AUTHOR: Bruce JK Huang (bjhuang@umich.edu)
  * WEBSITE: https://www.brucerobot.com/
  */
-#include "nanoflann.hpp"
 #include <Eigen/Core>
 #include <Eigen/Sparse>
-#include <chrono> // high_resolution_clock
+#include <chrono>  // high_resolution_clock
+#include "nanoflann.hpp"
 
-namespace BipedLab {
+namespace BipedLab
+{
 typedef velodyne_pointcloud::PointXYZIR PointXYZRI;
-typedef struct QuickDecodeEntry {
-  uint64_t rcode;    // the queried code
-  uint16_t id;       // the tag id (a small integer)
-  uint16_t hamming;  // how many errors corrected?
-  uint16_t rotation; // number of rotations [0, 3]
+typedef struct QuickDecodeEntry
+{
+  uint64_t rcode;     // the queried code
+  uint16_t id;        // the tag id (a small integer)
+  uint16_t hamming;   // how many errors corrected?
+  uint16_t rotation;  // number of rotations [0, 3]
 } QuickDecodeEntry_t;
 
-typedef struct QuickDecode {
+typedef struct QuickDecode
+{
   int nentries;
-  QuickDecodeEntry_t *entries;
+  QuickDecodeEntry_t * entries;
 } QuickDecode_t;
 
-typedef struct PayloadVoting {
-  PointXYZRI *p;
+typedef struct PayloadVoting
+{
+  PointXYZRI * p;
   float weight;
   int cell;
   PointXYZRI centroid;
@@ -63,14 +67,17 @@ typedef struct PayloadVoting {
 //         tmp.intensity = p1.intensity + p2.intensity;
 //         return tmp;
 // };
-typedef struct MaxMin {
+typedef struct MaxMin
+{
   int min;
   int average;
   int max;
 } MaxMin_t;
 
-struct angleComparision {
-  bool operator()(const float &i, const float &j) const {
+struct angleComparision
+{
+  bool operator()(const float & i, const float & j) const
+  {
     // if (std::abs(i - j) > 0.0017)
     //     return true;
     // else
@@ -95,59 +102,61 @@ struct angleComparision {
 };
 
 // Structure for LiDAR system
-typedef struct LiDARSystem {
-  std::vector<std::vector<int>>
-      point_count_table; // point per ring  PointCountTable[Scan][ring]
-  std::vector<MaxMin_t> max_min_table; // max min points in a scan
-  std::vector<MaxMin_t>
-      ring_average_table; // max, min, average points in a ring, examed through
-                          // out a few seconds
+typedef struct LiDARSystem
+{
+  std::vector<std::vector<int>> point_count_table;  // point per ring  PointCountTable[Scan][ring]
+  std::vector<MaxMin_t> max_min_table;              // max min points in a scan
+  std::vector<MaxMin_t> ring_average_table;  // max, min, average points in a ring, examed through
+                                             // out a few seconds
   // std::vector<float> angle_list; // store the angle of each point
   std::set<float, angleComparision> angle_list;
 
-  double points_per_square_meter_at_one_meter; // TODO: only assume place the
-                                               // tag at dense-point area
+  double points_per_square_meter_at_one_meter;  // TODO: only assume place the
+                                                // tag at dense-point area
   double beam_per_vertical_radian;
   double point_per_horizontal_radian;
 } LiDARSystem_t;
 
 // Struture for LiDAR PointCloud with index
-typedef struct LiDARPoints {
+typedef struct LiDARPoints
+{
   PointXYZRI point;
   int index;
   int valid;
-  double tag_size; // only take abs value due to uncertain direction
-  double
-      box_width; // Also account for direction by knowing tag is white to black
+  double tag_size;   // only take abs value due to uncertain direction
+  double box_width;  // Also account for direction by knowing tag is white to black
   double threshold_intensity;
 } LiDARPoints_t;
 
-typedef struct TagLines {
+typedef struct TagLines
+{
   int upper_ring;
   int lower_ring;
-  std::vector<LiDARPoints_t *> upper_line; // basically just a specific ring,
-                                           // just point to it should be fine
-  std::vector<LiDARPoints_t *> lower_line; // same above
-  std::vector<LiDARPoints_t *> left_line;  // same
-  std::vector<LiDARPoints_t *> right_line; // same above
+  std::vector<LiDARPoints_t *> upper_line;  // basically just a specific ring,
+                                            // just point to it should be fine
+  std::vector<LiDARPoints_t *> lower_line;  // same above
+  std::vector<LiDARPoints_t *> left_line;   // same
+  std::vector<LiDARPoints_t *> right_line;  // same above
 
-  std::vector<LiDARPoints_t *> bottom_left;  // basically just a specific ring,
-                                             // just point to it should be fine
-  std::vector<LiDARPoints_t *> bottom_right; // same above
-  std::vector<LiDARPoints_t *> top_left;     // same
-  std::vector<LiDARPoints_t *> top_right;    // same above
+  std::vector<LiDARPoints_t *> bottom_left;   // basically just a specific ring,
+                                              // just point to it should be fine
+  std::vector<LiDARPoints_t *> bottom_right;  // same above
+  std::vector<LiDARPoints_t *> top_left;      // same
+  std::vector<LiDARPoints_t *> top_right;     // same above
 } TagLines_t;
 
-typedef struct TagBoundaries {
-  int status;                            // 0 is up right, 1 is tilted
-  std::vector<LiDARPoints_t *> line_one; // basically just a specific ring, just
-                                         // point to it should be fine
-  std::vector<LiDARPoints_t *> line_two; // same above
-  std::vector<LiDARPoints_t *> line_three; // same
-  std::vector<LiDARPoints_t *> line_four;  // same above
+typedef struct TagBoundaries
+{
+  int status;                               // 0 is up right, 1 is tilted
+  std::vector<LiDARPoints_t *> line_one;    // basically just a specific ring, just
+                                            // point to it should be fine
+  std::vector<LiDARPoints_t *> line_two;    // same above
+  std::vector<LiDARPoints_t *> line_three;  // same
+  std::vector<LiDARPoints_t *> line_four;   // same above
 } TagBoundaries_t;
 
-typedef struct Homogeneous {
+typedef struct Homogeneous
+{
   // EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   float roll;
   float pitch;
@@ -157,19 +166,21 @@ typedef struct Homogeneous {
   Eigen::Matrix<float, 4, 4, Eigen::DontAlign> homogeneous;
 } Homogeneous_t;
 
-typedef struct Grid {
+typedef struct Grid
+{
   float cx;
   float cz;
   float cy;
 } Grid_t;
 
-typedef struct RKHSDecoding {
+typedef struct RKHSDecoding
+{
   Eigen::MatrixXf initial_template_points;
   Eigen::MatrixXf template_points;
   Eigen::MatrixXf template_points_xyz;
   Eigen::VectorXf template_points_feat;
   Eigen::MatrixXf template_points_3d;
-  Eigen::MatrixXf *associated_pattern_3d;
+  Eigen::MatrixXf * associated_pattern_3d;
   std::vector<float> score;
   int num_points;
   int size_num;
@@ -180,7 +191,8 @@ typedef struct RKHSDecoding {
   float id_score;
 } RKHSDecoding_t;
 
-typedef struct ClusterFamily {
+typedef struct ClusterFamily
+{
   // EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   int cluster_id;
   int valid;
@@ -195,47 +207,45 @@ typedef struct ClusterFamily {
   PointXYZRI right_most_point;
   PointXYZRI left_most_point;
 
-  PointXYZRI average;                  // Average point
-  PointXYZRI max_intensity;            // Maximux intensity point
-  PointXYZRI min_intensity;            // Minimum intensity point
-  pcl::PointCloud<LiDARPoints_t> data; // data doesn't have edge points
+  PointXYZRI average;                   // Average point
+  PointXYZRI max_intensity;             // Maximux intensity point
+  PointXYZRI min_intensity;             // Minimum intensity point
+  pcl::PointCloud<LiDARPoints_t> data;  // data doesn't have edge points
   pcl::PointCloud<LiDARPoints_t> edge_points;
   pcl::PointCloud<LiDARPoints_t> transformed_edge_points;
 
   // If the first point of the ring is the cluster.
   // If so, the the indices fo the two sides will be far away
   int special_case;
-  Eigen::MatrixXf merged_data;   // this includes edge and filled-in points
-  Eigen::MatrixXf merged_data_h; // this includes edge and filled-in points
+  Eigen::MatrixXf merged_data;    // this includes edge and filled-in points
+  Eigen::MatrixXf merged_data_h;  // this includes edge and filled-in points
 
-  std::vector<MaxMin_t>
-      max_min_index_of_each_ring; // to fill in points between end points in
-                                  // this cluster
+  std::vector<MaxMin_t> max_min_index_of_each_ring;  // to fill in points between end points in
+                                                     // this cluster
   std::vector<std::vector<LiDARPoints_t *>>
-      ordered_points_ptr; // of the cluster (to find black margin of the tag)
-  std::vector<double>
-      accumulate_intensity_of_each_ring; // to find the upper/lower lines of the
-                                         // tag
-  TagLines_t tag_edges;                  // store line segment from points
+    ordered_points_ptr;  // of the cluster (to find black margin of the tag)
+  std::vector<double> accumulate_intensity_of_each_ring;  // to find the upper/lower lines of the
+                                                          // tag
+  TagLines_t tag_edges;                                   // store line segment from points
   TagBoundaries_t tag_boundaries;
 
   std::vector<LiDARPoints_t *>
-      payload_right_boundary_ptr; // of the cluster (to find black margin of the
-                                  // tag)
-  std::vector<LiDARPoints_t *>
-      payload_left_boundary_ptr; // of the cluster (to find black margin of the
+    payload_right_boundary_ptr;  // of the cluster (to find black margin of the
                                  // tag)
   std::vector<LiDARPoints_t *>
-      payload_boundary_ptr; // of the cluster (to find black margin of the tag)
+    payload_left_boundary_ptr;  // of the cluster (to find black margin of the
+                                // tag)
+  std::vector<LiDARPoints_t *>
+    payload_boundary_ptr;  // of the cluster (to find black margin of the tag)
   int data_inliers;
   int edge_inliers;
   int inliers;
   double percentages_inliers;
   int boundary_pts;
   int boundary_rings;
-  pcl::PointCloud<LiDARPoints_t *> payload; // payload points with boundary
-  pcl::PointCloud<LiDARPoints_t *> RLHS_decoding; // payload points transformed
-  int payload_without_boundary; // size of payload points withpout boundary
+  pcl::PointCloud<LiDARPoints_t *> payload;        // payload points with boundary
+  pcl::PointCloud<LiDARPoints_t *> RLHS_decoding;  // payload points transformed
+  int payload_without_boundary;                    // size of payload points withpout boundary
   double tag_size;
   double box_width;
 
@@ -253,7 +263,7 @@ typedef struct ClusterFamily {
   Homogeneous_t initial_pose;
   tf::Transform transform;
 
-  RKHSDecoding_t rkhs_decoding; //
+  RKHSDecoding_t rkhs_decoding;  //
 
   /* VectorXf:
    *          point_on_line.x : the X coordinate of a point on the line
@@ -263,19 +273,19 @@ typedef struct ClusterFamily {
    *          line_direction.y : the Y coordinate of a line's direction
    *          line_direction.z : the Z coordinate of a line's direction
    */
-  std::vector<Eigen::VectorXf>
-      line_coeff; // Upper, left, bottom, right line (count-clockwise)
+  std::vector<Eigen::VectorXf> line_coeff;  // Upper, left, bottom, right line (count-clockwise)
   int detail_valid;
   int pose_estimation_status;
   int expected_points;
 } ClusterFamily_t;
 
-typedef struct GrizTagFamily {
+typedef struct GrizTagFamily
+{
   // How many codes are there in this tag family?
   uint32_t ncodes;
 
   // The codes in the family.
-  uint64_t *codes;
+  uint64_t * codes;
 
   // how wide (in bit-sizes) is the black border? (usually 1)
   uint32_t black_border;
@@ -287,22 +297,23 @@ typedef struct GrizTagFamily {
   uint32_t h;
 
   // a human-readable name, e.g., "tag36h11"
-  char *name;
+  char * name;
 
   // some detector implementations may preprocess codes in order to
   // accelerate decoding.  They put their data here. (Do not use the
   // same apriltag_family instance in more than one implementation)
-  void *impl;
+  void * impl;
 } GrizTagFamily_t;
 
-typedef struct ClusterRemoval {
+typedef struct ClusterRemoval
+{
   int minimum_return;
   int maximum_return;
-  int plane_fitting;        // v
-  int plane_outliers;       // v
-  int boundary_point_check; // v
+  int plane_fitting;         // v
+  int plane_outliers;        // v
+  int boundary_point_check;  // v
   int minimum_ring_points;
-  int no_edge_check; // v
+  int no_edge_check;  // v
   int line_fitting;
   int pose_optimization;
   int decoding_failure;
@@ -312,7 +323,8 @@ typedef struct ClusterRemoval {
   int decoder_fail_corner;
 } ClusterRemoval_t;
 
-typedef struct Statistics {
+typedef struct Statistics
+{
   ClusterRemoval_t cluster_removal;
   int original_cluster_size;
   int remaining_cluster_size;
@@ -320,7 +332,8 @@ typedef struct Statistics {
   int edge_cloud_size;
 } Statistics_t;
 
-typedef struct Timing {
+typedef struct Timing
+{
   // in ms
   std::chrono::steady_clock::time_point start_total_time;
   std::chrono::steady_clock::time_point start_computation_time;
@@ -346,7 +359,8 @@ typedef struct Timing {
   double tag_to_robot_time;
 } Timing_t;
 
-typedef struct TimeDecoding {
+typedef struct TimeDecoding
+{
   // in ms
   std::chrono::steady_clock::time_point timing;
 
@@ -360,43 +374,48 @@ typedef struct TimeDecoding {
   double tbb_kd_tree;
 } TimeDecoding_t;
 
-typedef struct TestCluster {
+typedef struct TestCluster
+{
   int flag;
   ClusterFamily_t new_cluster;
 } TestCluster_t;
 
-typedef struct Debug {
+typedef struct Debug
+{
   std::vector<ClusterFamily_t *> point_check;
   std::vector<ClusterFamily_t *> boundary_point;
   std::vector<ClusterFamily_t *> no_edge;
   std::vector<ClusterFamily_t *> extract_payload;
 } Debug_t;
 
-typedef struct PathLeafString {
-  std::string
-  operator()(const boost::filesystem::directory_entry &entry) const {
+typedef struct PathLeafString
+{
+  std::string operator()(const boost::filesystem::directory_entry & entry) const
+  {
     return entry.path().leaf().string();
   }
 } PathLeafString_t;
 
-typedef struct {
+typedef struct
+{
   float x;
   float y;
   float z;
 } point;
 
-typedef struct {
-  point top;
-  point down;
-  point left;
-  point right;
+//Going counterclockwise starting from the bottom left corner
+typedef struct
+{
+  point bottom_left;
+  point bottom_right;
+  point top_right;
+  point top_left;
 } corners;
 
 typedef nanoflann::KDTreeEigenMatrixAdaptor<
-    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>, -1,
-    nanoflann::metric_L2, false>
-    kd_tree_t;
+  Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>, -1, nanoflann::metric_L2, false>
+  kd_tree_t;
 
 typedef Eigen::Triplet<float> Trip_t;
 
-} // namespace BipedLab
+}  // namespace BipedLab
