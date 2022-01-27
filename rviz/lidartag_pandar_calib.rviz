@@ -4,20 +4,28 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
+        - /Status1
         - /Image1/Topic1
-        - /(Optimized) Binary Transformed Points1/Topic1
-        - "/Cluster info: detail code1/Topic1"
-        - "/Cluster info: detail code1/Namespaces1"
+        - /Filled Clusters2
+        - /3D Transformed Points1/Topic1
+        - /Template1
+        - /MarkerArray1
+        - /MarkerArray3/Topic1
+        - /MarkerArray3/Namespaces1
         - /Marker1/Topic1
         - /Marker2/Topic1
         - /Marker3/Topic1
         - /Marker5/Topic1
         - /Marker6/Topic1
+        - /Marker7
         - /Marker7/Topic1
+        - /Marker8
         - /Marker8/Topic1
+        - /Camera1
         - /Camera1/Topic1
-      Splitter Ratio: 0.7092511057853699
-    Tree Height: 803
+      Splitter Ratio: 0.5
+    Tree Height: 597
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
@@ -57,24 +65,6 @@ Visualization Manager:
       Plane Cell Count: 20
       Reference Frame: <Fixed Frame>
       Value: true
-    - Alpha: 0.5
-      Cell Size: 0.13500000536441803
-      Class: rviz_default_plugins/Grid
-      Color: 226; 226; 226
-      Enabled: false
-      Line Style:
-        Line Width: 0.029999999329447746
-        Value: Lines
-      Name: Grid Template
-      Normal Cell Count: 0
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Plane: YZ
-      Plane Cell Count: 6
-      Reference Frame: <Fixed Frame>
-      Value: false
     - Class: rviz_default_plugins/Axes
       Enabled: true
       Length: 1
@@ -153,7 +143,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.019999999552965164
+      Size (m): 0.05000000074505806
       Style: Spheres
       Topic:
         Depth: 5
@@ -199,7 +189,7 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
-    - Alpha: 0.20000000298023224
+    - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
         Max Value: 10
@@ -211,10 +201,10 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 88
+      Max Intensity: 87
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: Filled Clusters
@@ -232,7 +222,7 @@ Visualization Manager:
         Value: /dummy_sensor_kit/pandar/camera_optical_link/lidartag/detected_pc
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Class: rviz_default_plugins/MarkerArray
       Enabled: false
       Name: Filled Clusters
@@ -272,7 +262,7 @@ Visualization Manager:
       Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 82
+      Max Intensity: 83
       Min Color: 0; 0; 0
       Min Intensity: 15
       Name: Boundary Points
@@ -306,14 +296,14 @@ Visualization Manager:
       Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 0
+      Max Intensity: 127.62503814697266
       Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: Estimated Corners (PCA)
+      Min Intensity: 127.62503814697266
+      Name: Estimated Corners
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.05000000074505806
+      Size (m): 0.10000000149011612
       Style: Spheres
       Topic:
         Depth: 5
@@ -374,9 +364,9 @@ Visualization Manager:
       Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 47
+      Max Intensity: 87
       Min Color: 0; 0; 0
-      Min Intensity: 1
+      Min Intensity: 0
       Name: Initial Transformed Points
       Position Transformer: XYZ
       Selectable: true
@@ -397,7 +387,7 @@ Visualization Manager:
       Enabled: true
       Name: Tag Frame
       Namespaces:
-        "": true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -411,7 +401,7 @@ Visualization Manager:
       Name: ID
       Namespaces:
         Text0: true
-        Text1: true
+        Text2: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -434,10 +424,10 @@ Visualization Manager:
       Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 48
+      Max Intensity: 86
       Min Color: 0; 0; 0
       Min Intensity: 0
-      Name: (Optimized) Transformed Point
+      Name: Planner Transformed Point
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
@@ -468,10 +458,10 @@ Visualization Manager:
       Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 58
+      Max Intensity: 89
       Min Color: 0; 0; 0
       Min Intensity: 0
-      Name: (Optimized) Binary Transformed Points
+      Name: 3D Transformed Points
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
@@ -505,7 +495,7 @@ Visualization Manager:
       Max Intensity: 200
       Min Color: 0; 0; 0
       Min Intensity: 50
-      Name: Template Points
+      Name: Function Library
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
@@ -523,7 +513,7 @@ Visualization Manager:
       Value: false
     - Class: rviz_default_plugins/MarkerArray
       Enabled: false
-      Name: Template Frame
+      Name: Template
       Namespaces:
         {}
       Topic:
@@ -531,11 +521,11 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /dummy_sensor_kit/pandar/camera_optical_link/lidartag/ideal_frame
+        Value: /dummy_sensor_kit/pandar/camera_optical_link/lidartag/IdealFrame
       Value: false
     - Class: rviz_default_plugins/MarkerArray
-      Enabled: false
-      Name: MarkerArray (Unused)
+      Enabled: true
+      Name: MarkerArray
       Namespaces:
         {}
       Topic:
@@ -544,7 +534,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /dummy_sensor_kit/pandar/camera_optical_link/lidartag/detail_valid_marker
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -563,11 +553,11 @@ Visualization Manager:
       Max Intensity: 4096
       Min Color: 0; 0; 0
       Min Intensity: 0
-      Name: (Before Transformed) Edge Pointcloud
+      Name: PointCloud2
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.029999999329447746
+      Size (m): 0.009999999776482582
       Style: Flat Squares
       Topic:
         Depth: 5
@@ -581,7 +571,7 @@ Visualization Manager:
       Value: false
     - Class: rviz_default_plugins/MarkerArray
       Enabled: false
-      Name: Intersection Markers
+      Name: MarkerArray
       Namespaces:
         {}
       Topic:
@@ -613,7 +603,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.10000000149011612
+      Size (m): 0.009999999776482582
       Style: Flat Squares
       Topic:
         Depth: 5
@@ -640,14 +630,14 @@ Visualization Manager:
       Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 0
+      Max Intensity: 7
       Min Color: 0; 0; 0
-      Min Intensity: 0
+      Min Intensity: 4
       Name: PointCloud2
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.5
+      Size (m): 0.05000000074505806
       Style: Flat Squares
       Topic:
         Depth: 5
@@ -676,7 +666,7 @@ Visualization Manager:
       Value: false
     - Class: rviz_default_plugins/MarkerArray
       Enabled: false
-      Name: "Cluster info: detail code"
+      Name: MarkerArray
       Namespaces:
         {}
       Topic:
@@ -688,7 +678,7 @@ Visualization Manager:
       Value: false
     - Class: rviz_default_plugins/MarkerArray
       Enabled: false
-      Name: "Cluster info: size"
+      Name: Cluster PC Size
       Namespaces:
         {}
       Topic:
@@ -733,10 +723,10 @@ Visualization Manager:
       Use rainbow: true
       Value: false
     - Class: rviz_default_plugins/Marker
-      Enabled: false
+      Enabled: true
       Name: Marker
       Namespaces:
-        {}
+        tag_top_corners: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -744,12 +734,12 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /dummy_sensor_kit/pandar/camera_optical_link/lidartag/top_corner
-      Value: false
+      Value: true
     - Class: rviz_default_plugins/Marker
-      Enabled: false
+      Enabled: true
       Name: Marker
       Namespaces:
-        {}
+        tag_top_boundary_corners: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -757,12 +747,12 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /dummy_sensor_kit/pandar/camera_optical_link/lidartag/top_boundary_corner
-      Value: false
+      Value: true
     - Class: rviz_default_plugins/Marker
-      Enabled: false
+      Enabled: true
       Name: Marker
       Namespaces:
-        {}
+        tag_left_corners: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -770,12 +760,12 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /dummy_sensor_kit/pandar/camera_optical_link/lidartag/left_corner
-      Value: false
+      Value: true
     - Class: rviz_default_plugins/Marker
-      Enabled: false
+      Enabled: true
       Name: Marker
       Namespaces:
-        {}
+        tag_left_boundary_corners: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -783,46 +773,12 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /dummy_sensor_kit/pandar/camera_optical_link/lidartag/left_boundary_corner
-      Value: false
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz_default_plugins/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: Intensity
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 50
-      Min Color: 0; 0; 0
-      Min Intensity: 50
-      Name: PointCloud2
-      Position Transformer: XYZ
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.10000000149011612
-      Style: Flat Squares
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /dummy_sensor_kit/pandar/camera_optical_link/lidartag/transformed_points
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
+      Value: true
     - Class: rviz_default_plugins/Marker
-      Enabled: false
+      Enabled: true
       Name: Marker
       Namespaces:
-        {}
+        tag_down_corners: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -830,12 +786,12 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /dummy_sensor_kit/pandar/camera_optical_link/lidartag/down_corner
-      Value: false
+      Value: true
     - Class: rviz_default_plugins/Marker
-      Enabled: false
+      Enabled: true
       Name: Marker
       Namespaces:
-        {}
+        tag_down_boundary_corners: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -843,12 +799,12 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /dummy_sensor_kit/pandar/camera_optical_link/lidartag/down_boundary_corner
-      Value: false
+      Value: true
     - Class: rviz_default_plugins/Marker
-      Enabled: false
+      Enabled: true
       Name: Marker
       Namespaces:
-        {}
+        tag_right_corners: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -856,12 +812,12 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /dummy_sensor_kit/pandar/camera_optical_link/lidartag/right_corner
-      Value: false
+      Value: true
     - Class: rviz_default_plugins/Marker
-      Enabled: false
+      Enabled: true
       Name: Marker
       Namespaces:
-        {}
+        tag_right_boundary_corners: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -869,9 +825,9 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /dummy_sensor_kit/pandar/camera_optical_link/lidartag/right_boundary_corner
-      Value: false
+      Value: true
     - Class: rviz_default_plugins/Camera
-      Enabled: false
+      Enabled: true
       Image Rendering: background and overlay
       Name: Camera
       Overlay Alpha: 0.5
@@ -882,42 +838,37 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Best Effort
         Value: /camera/image
-      Value: false
+      Value: true
       Visibility:
-        (Before Transformed) Edge Pointcloud: true
-        (Optimized) Binary Transformed Points: true
-        (Optimized) Transformed Point: true
+        3D Transformed Points: true
         Axes: true
         Boundary Points: true
-        "Cluster info: detail code": true
-        "Cluster info: size": true
+        Cluster PC Size: true
         Clusters: true
         Colored Cluster: true
-        Estimated Corners (PCA): true
+        Estimated Corners: true
         Filled Cluster B&W: true
         Filled Clusters: true
+        Function Library: true
         Grid: true
-        Grid Template: true
         ID: true
         Image: true
         Initial Transformed Points: true
         Initial guess Corners: true
-        Intersection Markers: true
         Marker: true
-        MarkerArray (Unused): true
+        MarkerArray: true
+        Planner Transformed Point: true
         PointCloud2: true
         Points of Interest: true
         Raw Pointcloud: true
         Tag Frame: true
-        Tag calib markers (filtered): true
-        Tag calib markers (unfiltered): true
-        Template Frame: true
-        Template Points: true
+        Tag calib markers: true
+        Template: true
         Value: true
       Zoom Factor: 1
     - Class: rviz_default_plugins/MarkerArray
-      Enabled: false
-      Name: Tag calib markers (unfiltered)
+      Enabled: true
+      Name: Tag calib markers
       Namespaces:
         {}
       Topic:
@@ -925,36 +876,12 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /dummy_sensor_kit/pandar/camera_optical_link/current_projections
-      Value: false
-    - Class: rviz_default_plugins/MarkerArray
-      Enabled: true
-      Name: Tag calib markers (filtered)
-      Namespaces:
-        apriltag: true
-        apriltag_0_corner_id: true
-        apriltag_1_corner_id: true
-        apriltag_id: true
-        lidartag_ccs: true
-        lidartag_ccs_0_corner_id: true
-        lidartag_ccs_1_corner_id: true
-        lidartag_ccs_id: true
-        lidartag_ics: true
-        lidartag_ics_0_corner_id: true
-        lidartag_ics_1_corner_id: true
-        lidartag_ics_id: true
-        lidartag_lcs: true
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /dummy_sensor_kit/pandar/camera_optical_link/filtered_projections
+        Value: /dummy_sensor_kit/pandar/camera_optical_link/image_projections
       Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: pandar
+    Fixed Frame: camera_optical_link
     Frame Rate: 30
   Name: root
   Tools:
@@ -997,25 +924,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 4.446293354034424
+      Distance: 8.597634315490723
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.13183638453483582
-        Y: -0.31201931834220886
-        Z: 0.7403432726860046
-      Focal Shape Fixed Size: false
+        X: 0.7080040574073792
+        Y: 1.3277044296264648
+        Z: 1.4046443700790405
+      Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.470398485660553
+      Pitch: -1.544796347618103
       Target Frame: <Fixed Frame>
-      Value: Orbit (rviz_default_plugins)
-      Yaw: 1.5303975343704224
+      Value: Orbit (rviz)
+      Yaw: 1.6303999423980713
     Saved: ~
 Window Geometry:
   Camera:
@@ -1027,7 +954,7 @@ Window Geometry:
   Hide Right Dock: false
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001c80000035efc020000000cfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003b0000035e000000c700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d00610067006500000004ee000000a10000002800fffffffb0000000a0049006d00610067006500000002f8000000a10000002800fffffffb0000000c00430061006d00650072006100000002d1000000c80000002800fffffffb00000030005200650063006f0067006e006900740069006f006e0052006500730075006c0074004f006e0049006d0061006700650100000383000000160000000000000000000000010000010f0000035efc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003b0000035e000000a000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007380000003efc0100000002fb0000000800540069006d00650100000000000007380000024400fffffffb0000000800540069006d00650100000000000004500000000000000000000004550000035e00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000003260000035efc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003b00000290000000c700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d00610067006500000004ee000000a10000002800fffffffb0000000a0049006d00610067006500000002f8000000a10000002800fffffffb0000000c00430061006d00650072006101000002d1000000c80000002800ffffff000000010000010f0000035efc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003b0000035e000000a000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007380000003efc0100000002fb0000000800540069006d00650100000000000007380000024400fffffffb0000000800540069006d00650100000000000004500000000000000000000002f70000035e00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
