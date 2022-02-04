@@ -112,15 +112,9 @@ LidarTag::LidarTag(const rclcpp::NodeOptions & options) :
 
   RCLCPP_INFO(get_logger(), "ALL INITIALIZED!");
 
-  if (sensor_qos_) {
-    lidar1_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-      pointcloud_topic_, rclcpp::SensorDataQoS(), std::bind(&LidarTag::pointCloudCallback,
-      this, std::placeholders::_1));
-  }
-  else {
-    lidar1_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-      pointcloud_topic_, 50, std::bind(&LidarTag::pointCloudCallback, this, std::placeholders::_1));
-  }
+  lidar1_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+    "pointcloud_input", rclcpp::SensorDataQoS(), std::bind(&LidarTag::pointCloudCallback,
+    this, std::placeholders::_1));
 
   edge_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("whole_edged_pc", 10);
   transformed_points_pub_ =
@@ -157,7 +151,7 @@ LidarTag::LidarTag(const rclcpp::NodeOptions & options) :
   clustered_points_pub_ =
     this->create_publisher<sensor_msgs::msg::PointCloud2>("cluster_edge_pc", 5);
   detection_array_pub_ = this->create_publisher<lidartag_msgs::msg::LidarTagDetectionArray>(
-    lidartag_detections_topic_, 10);
+    "detections_array", 10);
   lidartag_cluster_pub_ =
     this->create_publisher<sensor_msgs::msg::PointCloud2>("lidartag_cluster_points", 10);
   lidartag_cluster_edge_points_pub_ =
@@ -165,10 +159,6 @@ LidarTag::LidarTag(const rclcpp::NodeOptions & options) :
   lidartag_cluster_transformed_edge_points_pub_ =
     this->create_publisher<sensor_msgs::msg::PointCloud2>(
     "lidartag_cluster_trasformed_edge_points", 10);
-  //detail_valid_marker_array_pub_ =
-  //  this->create_publisher<visualization_msgs::msg::MarkerArray>("detail_valid_marker", 10);
-  //detail_valid_text_pub_ =
-  //  this->create_publisher<jsk_msgs::msg::OverlayText>("detail_valid_text", 10);
   intersection_marker_array_pub_ =
     this->create_publisher<visualization_msgs::msg::MarkerArray>("intesection_markers", 10);
   transformed_edge_pc_pub_ =
@@ -178,28 +168,15 @@ LidarTag::LidarTag(const rclcpp::NodeOptions & options) :
   beforetransformed_edge_pc_pub_ =
     this->create_publisher<sensor_msgs::msg::PointCloud2>("before_transformed_edge_pc", 10);
   corners_array_pub_ =
-    this->create_publisher<lidartag_msgs::msg::CornersArray>(corners_array_topic_, 10);
+    this->create_publisher<lidartag_msgs::msg::CornersArray>("corners_array", 10);
 
   corners_markers_pub_ =
     this->create_publisher<visualization_msgs::msg::MarkerArray>("corners_markers", 10);
-
-  //left_corners_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("left_corner", 10);
-  //right_corners_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("right_corner", 10);
-  //down_corners_pub = this->create_publisher<visualization_msgs::msg::Marker>("down_corner", 10);
-  //top_corners_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("top_corner", 10);
 
   boundary_corners_array_pub_ =
     this->create_publisher<lidartag_msgs::msg::CornersArray>("boundary_corners_array", 10);
   boundary_corners_markers_pub_ =
     this->create_publisher<visualization_msgs::msg::MarkerArray>("boundary_corners_markers", 10);
-  //left_boundary_corners_pub_ =
-  //  this->create_publisher<visualization_msgs::msg::Marker>("left_boundary_corner", 10);
-  //right_boundary_corners_pub_ =
-  //  this->create_publisher<visualization_msgs::msg::Marker>("right_boundary_corner", 10);
-  //down_boundary_corners_pub_ =
-  //  this->create_publisher<visualization_msgs::msg::Marker>("down_boundary_corner", 10);
-  //top_boundary_corners_pub_ =
-  //  this->create_publisher<visualization_msgs::msg::Marker>("top_boundary_corner", 10);
 
   colored_cluster_buff_pub_ =
     this->create_publisher<sensor_msgs::msg::PointCloud2>("colored_cluster_buff", 10);
@@ -237,7 +214,6 @@ rcl_interfaces::msg::SetParametersResult LidarTag::paramCallback(
     UPDATE_LIDARTAG_PARAM(params, ransac_threshold);
     UPDATE_LIDARTAG_PARAM(params, fine_cluster_threshold);
     UPDATE_LIDARTAG_PARAM(params, filling_gap_max_index);
-    UPDATE_LIDARTAG_PARAM(params, filling_max_points_threshold);
     UPDATE_LIDARTAG_PARAM(params, points_threshold_factor);
     UPDATE_LIDARTAG_PARAM(params, distance_to_plane_threshold);
     UPDATE_LIDARTAG_PARAM(params, max_outlier_ratio);
@@ -262,6 +238,9 @@ rcl_interfaces::msg::SetParametersResult LidarTag::paramCallback(
     result.successful = false;
     result.reason = e.what();
   }
+
+  // These parameters are linked , so it is better to update them like this
+  params_.linkage_threshold = params_.linkage_tunable * payload_size_ * clearance_;
 
   return result;
 }
@@ -435,7 +414,7 @@ void LidarTag::mainLoop()
         break;
       }
     }
-  } // ros::ok()
+  } // rclcpp::ok()
 
 }
 
@@ -447,11 +426,8 @@ void LidarTag::getParameters() {
 
   std::string tag_size_string;
 
-  this->declare_parameter<bool>("sensor_qos");
   this->declare_parameter<std::string>("frame_name");
   this->declare_parameter<double>("distance_threshold");
-  this->declare_parameter<std::string>("lidartag_detections_topic");
-  this->declare_parameter<std::string>("corners_array_topic");
   this->declare_parameter<int>("sleep_to_display");
   this->declare_parameter<double>("sleep_time_for_visulization");
   this->declare_parameter<int>("valgrind_check");
@@ -527,12 +503,8 @@ void LidarTag::getParameters() {
   this->declare_parameter<bool>("pcl_visualize_cluster");
   this->declare_parameter<double>("clearance");
 
-  bool GotSensorQOS = this->get_parameter("sensor_qos", sensor_qos_);
   bool GotPubFrame = this->get_parameter("frame_name", pub_frame_);
   bool GotThreshold = this->get_parameter("distance_threshold", distance_threshold_);
-  bool GotPublishTopic =
-    this->get_parameter("lidartag_detections_topic", lidartag_detections_topic_);
-  bool GotCornersArrayTopic = this->get_parameter("corners_array_topic", corners_array_topic_);
   bool GotSleepToDisplay = this->get_parameter("sleep_to_display", sleep_to_display_);
   bool GotSleepTimeForVis = this->get_parameter("sleep_time_for_visulization", sleep_time_for_vis_);
   bool GotValgrindCheck = this->get_parameter("valgrind_check", valgrind_check_);
@@ -546,7 +518,6 @@ void LidarTag::getParameters() {
   bool GotAdaptiveThresholding =
     this->get_parameter("adaptive_thresholding", adaptive_thresholding_);
   bool GotCollectData = this->get_parameter("collect_data", collect_dataset_);
-  bool GotLidarTopic = this->get_parameter("pointcloud_topic", pointcloud_topic_);
   bool GotBeamNum = this->get_parameter("beam_number", beam_num_);
   bool GotSize = this->get_parameter("tag_size", payload_size_);
 
@@ -625,22 +596,20 @@ void LidarTag::getParameters() {
   tag_size_list_.assign( std::istream_iterator<double>( is ), std::istream_iterator<double>() );
 
   bool pass = utils::checkParameters(
-    {GotSensorQOS, GotPubFrame, GotFakeTag, GotLidarTopic, GotBeamNum, GotOptPose, GotDecodeId,
-    GotPlaneFitting, GotOutPutPath, GotDistanceBound,
-    GotDepthBound, GotTagFamily, GotTagHamming, GotMaxDecodeHamming, GotFineClusterThreshold,
-    GotVerticalFOV, GotFillInGapThreshold, GotMaxOutlierRatio, GotPointsThresholdFactor,
-    GotDistanceToPlaneThreshold, GotAdaptiveThresholding, GotCollectData,
-    GotSleepToDisplay, GotSleepTimeForVis, GotValgrindCheck, GotPayloadIntensityThreshold,
-    GotBlackBorder, GotMinPerGrid,
-    GotDecodeMethod, GotDecodeMode, GotOptimizationMethod, GotGridViz, GotPublishTopic,
-    GotCornersArrayTopic, GotThreshold, GotNumPoints, GotNearBound, GotNumPointsRing,
-    GotCoefficient, GotTagSizeList, GotNumThreads, GotPrintInfo, GotOptimizePercent,
-    GotDebuginfo, GotDebugtime, GotLogData, GotDebugDecodingtime, GotLibraryPath,
-    GotNumCodes, GotCalibration, GotMinimumRingPoints, GotRingState, GotRingEstimation,
-    GotNumAccumulation, GotDerivativeMethod, GotUpbound, GotLowbound, GotCoaTunable,
-    GotTagsizeTunable, GotMaxClusterIndex, GotMinClusterIndex, GotMaxClusterPointsSize,
-    GotMinClusterPointsSize, GotDebugSinglePointcloud, GotDebugPointX, GotDebugPointY,
-    GotDebugPointZ, GotDebugClusterId, GotVisualizeCluster, GotClearance});
+    {GotPubFrame, GotFakeTag, GotBeamNum, GotOptPose, GotDecodeId, GotPlaneFitting,
+    GotOutPutPath, GotDistanceBound, GotDepthBound, GotTagFamily, GotTagHamming,
+    GotMaxDecodeHamming, GotFineClusterThreshold, GotVerticalFOV, GotFillInGapThreshold,
+    GotMaxOutlierRatio, GotPointsThresholdFactor, GotDistanceToPlaneThreshold,
+    GotAdaptiveThresholding, GotCollectData, GotSleepToDisplay, GotSleepTimeForVis,
+    GotValgrindCheck, GotPayloadIntensityThreshold, GotBlackBorder, GotMinPerGrid,
+    GotDecodeMethod, GotDecodeMode, GotOptimizationMethod, GotGridViz, GotThreshold, GotNumPoints,
+    GotNearBound, GotNumPointsRing, GotCoefficient, GotTagSizeList, GotNumThreads, GotPrintInfo,
+    GotOptimizePercent, GotDebuginfo, GotDebugtime, GotLogData, GotDebugDecodingtime,
+    GotLibraryPath, GotNumCodes, GotCalibration, GotMinimumRingPoints, GotRingState,
+    GotRingEstimation, GotNumAccumulation, GotDerivativeMethod, GotUpbound, GotLowbound,
+    GotCoaTunable, GotTagsizeTunable, GotMaxClusterIndex, GotMinClusterIndex,
+    GotMaxClusterPointsSize, GotMinClusterPointsSize, GotDebugSinglePointcloud, GotDebugPointX,
+    GotDebugPointY, GotDebugPointZ, GotDebugClusterId, GotVisualizeCluster, GotClearance});
 
   if (!pass) {
     rclcpp::shutdown();
@@ -663,7 +632,6 @@ void LidarTag::getParameters() {
 
   params_.ransac_threshold = payload_size_ / 10;
 
-  RCLCPP_INFO(get_logger(), "Subscribe to %s\n", pointcloud_topic_.c_str());
   RCLCPP_INFO(get_logger(), "Use %i-beam LiDAR\n", beam_num_);
   RCLCPP_INFO(get_logger(), "Use %i threads\n", num_threads_);
   RCLCPP_INFO(get_logger(), "depth_threshold_: %f \n", depth_threshold_);
@@ -671,8 +639,6 @@ void LidarTag::getParameters() {
   RCLCPP_INFO(get_logger(), "vertical_fov_: %f \n", vertical_fov_);
   RCLCPP_INFO(get_logger(), "fine_cluster_threshold: %i \n", params_.fine_cluster_threshold);
   RCLCPP_INFO(get_logger(), "filling_gap_max_index: %i \n", params_.filling_gap_max_index);
-  // RCLCPP_INFO(get_logger(), "_filling_max_points_threshold: %i \n",
-  // _filling_max_points_threshold);
   RCLCPP_INFO(get_logger(), "points_threshold_factor: %f \n", params_.points_threshold_factor);
   RCLCPP_INFO(get_logger(), "adaptive_thresholding_: %i \n", adaptive_thresholding_);
   RCLCPP_INFO(get_logger(), "collect_dataset_: %i \n", collect_dataset_);

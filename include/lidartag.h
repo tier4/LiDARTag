@@ -49,7 +49,6 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
-//#include <jsk_msgs/msg/overlay_text.hpp>
 
 // threading
 #include <boost/thread.hpp>
@@ -95,7 +94,6 @@ private:
     double ransac_threshold;
     int fine_cluster_threshold;       // TODO: REPLACE WITH TAG PARAMETERS
     int filling_gap_max_index;        // TODO: CHECK
-    int filling_max_points_threshold; // TODO: REMOVE
     double points_threshold_factor;   // TODO: CHECK
     double distance_to_plane_threshold;
     double max_outlier_ratio;
@@ -210,12 +208,8 @@ private:
   std::queue<sensor_msgs::msg::PointCloud2::SharedPtr> point_cloud1_queue_;
 
   // LiDAR parameters
-  bool sensor_qos_;
   rclcpp::Time current_scan_time_; // store current time of the lidar scan
-  std::string pointcloud_topic_; // subscribe channel
   std::string pub_frame_;        // publish under what frame?
-  std::string lidartag_detections_topic_;
-  std::string corners_array_topic_;
   // Overall LiDAR system parameters
   LiDARSystem_t lidar_system_;
   int beam_num_;

@@ -43,7 +43,5 @@ int main(int argc, char **argv){
     rclcpp::spin(node);
     rclcpp::shutdown();
 
-    cout << "Done!" << endl;
-
     return 0;
 }
