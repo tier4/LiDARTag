@@ -283,8 +283,6 @@ typedef struct ClusterFamily {
   int pose_estimation_status;
   int expected_points;
 
-  corners tag_corners; // KL: adding here for now
-  corners tag_boundary_corners;
   std::vector<point> corner_offset_array;
   std::vector<point> boundary_corner_offset_array;
 
