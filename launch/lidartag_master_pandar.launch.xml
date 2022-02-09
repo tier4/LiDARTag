@@ -34,6 +34,7 @@
 
   <!-- Common parameters to be set externally -->
   <arg name="pointcloud_topic" default="/pointcloud_raw" />
+  <arg name="lidar_frame" />
 
   <arg name="tag_size_list" />
 
@@ -84,7 +85,7 @@
 
 
       <!--  LiDAR System  -->
-      <param name="frame_name" value="pandar" />
+      <param name="frame_name" value="$(var lidar_frame)" />
       <param name="pointcloud_topic" value="$(var pointcloud_topic)" />
       <param name="beam_number" value="40" />
       <param name="vertical_fov" value="40.0" />
