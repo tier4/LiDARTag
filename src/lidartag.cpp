@@ -1004,7 +1004,7 @@ void LidarTag::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr
 
   point_cloud1_queue_lock_.lock();
 
-  while (!point_cloud1_queue_.size() > max_queue_size_)
+  while (point_cloud1_queue_.size() > max_queue_size_)
     point_cloud1_queue_.pop();
 
   if (params_.debug_single_pointcloud) {
