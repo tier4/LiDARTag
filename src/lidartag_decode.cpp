@@ -29,11 +29,11 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
-#include "lidartag.h"
-#include "apriltag_utils.h"
-#include "tag16h5.h"
-#include "tag49h14.h"
-#include "utils.h"
+#include <lidartag/lidartag.hpp>
+#include <lidartag/apriltag_utils.hpp>
+#include <lidartag/tag16h5.hpp>
+#include <lidartag/tag49h14.hpp>
+#include <lidartag/utils.hpp>
 
 #include <functional>
 #include <numeric>

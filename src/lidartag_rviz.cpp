@@ -29,7 +29,7 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
-#include "lidartag.h"
+#include <lidartag/lidartag.hpp>
 
 #include <pcl/common/intersections.h>
 
@@ -39,6 +39,7 @@
 #define SQRT2 1.41421356237
 
 using namespace std;
+using namespace std::chrono_literals;
 
 namespace BipedLab
 {
@@ -65,7 +66,7 @@ void LidarTag::assignMarker(
   marker.pose.orientation.w = 1.0;
   marker.text = text;
   // should disappear along with updateing rate
-  marker.lifetime = marker.lifetime = rclcpp::Duration(sleep_time_for_vis_ * 10); 
+  marker.lifetime = rclcpp::Duration::from_seconds(sleep_time_for_vis_ * 10); 
 
   // Set the scale of the marker -- 1x1x1 here means 1m on a side
   marker.scale.x = size;
@@ -94,7 +95,7 @@ void LidarTag::assignVectorMarker(
 
   marker.text = text;
   // should disappear along with updateing rate
-  marker.lifetime = marker.lifetime = rclcpp::Duration(sleep_time_for_vis_); 
+  marker.lifetime = rclcpp::Duration::from_seconds(sleep_time_for_vis_ * 10); 
   // Set the scale of the marker -- 1x1x1 here means 1m on a side
   geometry_msgs::msg::Point p1;
   p1.x = 0;  // centroid.x;
@@ -173,6 +174,7 @@ void LidarTag::plotTagFrame(const ClusterFamily_t & cluster)
   line_list.color.b = 1.0;
   line_list.color.a = 1.0;
   line_list.scale.x = 0.01;
+  line_list.lifetime = rclcpp::Duration::from_seconds(sleep_time_for_vis_ * 10);
 
   vector<vector<int>> vertex = {{1, 1}, {1, -1}, {-1, -1}, {-1, 1}};
   const double tag_depth = 0.02;
@@ -668,7 +670,7 @@ void LidarTag::addCornersAux(
   marker.id = 0;
   marker.type = visualization_msgs::msg::Marker::SPHERE;
   marker.action = visualization_msgs::msg::Marker::ADD;
-  marker.lifetime = rclcpp::Duration(0.5);
+  marker.lifetime = rclcpp::Duration::from_seconds(sleep_time_for_vis_ * 10);
   marker.pose.orientation.x = 0.0;
   marker.pose.orientation.y = 0.0;
   marker.pose.orientation.z = 0.0;
@@ -779,7 +781,7 @@ void LidarTag::displayClusterPointSize(const std::vector<ClusterFamily_t> & clus
   marker.header.frame_id = pub_frame_;
   marker.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
   marker.action = visualization_msgs::msg::Marker::ADD;
-  marker.lifetime = rclcpp::Duration(0.5);
+  marker.lifetime = rclcpp::Duration::from_seconds(sleep_time_for_vis_ * 10);
   marker.pose.orientation.x = 0.0;
   marker.pose.orientation.y = 0.0;
   marker.pose.orientation.z = 0.0;
@@ -820,7 +822,7 @@ void LidarTag::displayClusterIndexNumber(const std::vector<ClusterFamily_t> & cl
   marker.header.frame_id = pub_frame_;
   marker.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
   marker.action = visualization_msgs::msg::Marker::ADD;
-  marker.lifetime = rclcpp::Duration(0.5);
+  marker.lifetime = rclcpp::Duration::from_seconds(sleep_time_for_vis_ * 10);
   marker.pose.orientation.x = 0.0;
   marker.pose.orientation.y = 0.0;
   marker.pose.orientation.z = 0.0;
@@ -840,7 +842,7 @@ void LidarTag::displayClusterIndexNumber(const std::vector<ClusterFamily_t> & cl
     if (points_size > 50) {
       marker.header.stamp = clock_->now();
       marker.id = cluster_buff[i].cluster_id;
-      marker.text = to_string(i) + "/" + to_string(cluster_buff[i].detail_valid);
+      marker.text = to_string(i) + "/" + to_string(static_cast<int>(cluster_buff[i].detail_valid));
       marker.ns = "in_marker_" + to_string(cluster_buff[i].cluster_id);
       marker.pose.position.x = cluster_buff[i].average.x;
       marker.pose.position.y = cluster_buff[i].average.y;

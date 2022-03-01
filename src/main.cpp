@@ -29,7 +29,7 @@
  */
 
 
-#include <lidartag.h>
+#include <lidartag/lidartag.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 using namespace std;

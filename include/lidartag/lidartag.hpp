@@ -29,8 +29,8 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
-#ifndef LIDARTAG_H
-#define LIDARTAG_H
+#ifndef LIDARTAG_HPP
+#define LIDARTAG_HPP
 
 #include <fstream>
 #include <memory>
@@ -74,11 +74,12 @@
 #include <lidartag_msgs/msg/corners_array.hpp>
 #include <lidartag_msgs/msg/lidar_tag_detection.hpp>
 #include <lidartag_msgs/msg/lidar_tag_detection_array.hpp>
-#include "thread_pool.h"
-#include "types.h"
-#include "utils.h"
 
-#include "apriltag_utils.h"
+#include <lidartag/rectangle_estimator.hpp>
+#include <lidartag/thread_pool.hpp>
+#include <lidartag/types.hpp>
+#include <lidartag/utils.hpp>
+#include <lidartag/apriltag_utils.hpp>
 
 namespace BipedLab {
 class LidarTag: public rclcpp::Node {
@@ -106,11 +107,20 @@ private:
     int cluster_min_index;
     int cluster_max_points_size;
     int cluster_min_points_size;
+    double depth_bound; // Edge detection parameters
+    bool optional_fix_cluster;
+    bool use_rectangle_model;
+    bool rectangle_model_use_ransac;
+    int rectangle_model_max_iterations;
+    float rectangle_model_max_error;
+    bool refine_cluster_with_intersections;
     bool debug_single_pointcloud;
     double debug_point_x;
     double debug_point_y;
     double debug_point_z;
     int debug_cluster_id;
+    int debug_ring_id;
+    int debug_scan_id;
   } params_;
 
   OnSetParametersCallbackHandle::SharedPtr set_param_res_;
@@ -198,6 +208,7 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr colored_cluster_buff_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr ps_cluster_buff_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr in_cluster_buff_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr ordered_pointcloud_markers_pub_;
 
   // Flag
   int point_cloud_received_; // check if a scan of point cloud has received or
@@ -218,9 +229,6 @@ private:
   // PointCould data (for a single scan)
   int point_cloud_size_;
   std_msgs::msg::Header point_cloud_header_;
-
-  // Edge detection parameters
-  double depth_threshold_;
 
   // If on-board processing is limited, limit range of points
   double distance_bound_;
@@ -276,6 +284,9 @@ private:
   Statistics_t result_statistics_;
   std::string outputs_path_;
   std::string library_path_;
+
+  // Corner estimation
+  std::shared_ptr<RectangleEstimator> rectangle_estimator_;
 
   /* [Main loop]
    * main loop of process
@@ -478,6 +489,25 @@ private:
    * A function to calculate the average point of valid edge points
    */
   void organizeDataPoints(ClusterFamily_t & t_cluster);
+
+  /* <A cluster>
+   * A function to estimate the four corners of a tag using 4x line RANSAC
+   */
+  bool estimateCornersUsingLinesRANSAC(ClusterFamily_t & t_cluster,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud1, pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud2,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud3, pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud4,
+    Eigen::Vector3f & corner1, Eigen::Vector3f & corner2,
+    Eigen::Vector3f & corner3, Eigen::Vector3f & corner4);
+
+  /* <A cluster>
+   * A function to estimate the four corners of a tag using 1x rectangle fiting with
+   * optional RANSAC
+   */
+  bool estimateCornersUsingRectangleFitting(ClusterFamily_t & t_cluster,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud1, pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud2,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud3, pcl::PointCloud<pcl::PointXYZ>::Ptr & cloud4,
+    Eigen::Vector3f & corner1, Eigen::Vector3f & corner2,
+    Eigen::Vector3f & corner3, Eigen::Vector3f & corner4);
 
   /* [Edge points and principal axes]
    * A function to transform the edge points to the tag frame
@@ -796,6 +826,17 @@ private:
   void colorClusters(const std::vector<ClusterFamily_t> & cluster);
   void displayClusterPointSize(const std::vector<ClusterFamily_t> & cluster_buff);
   void displayClusterIndexNumber(const std::vector<ClusterFamily_t> & cluster_buff);
+
+  // DEBUG Kenzo
+  void addOrderedPointcloudMarkers(std::vector<std::vector<LidarPoints_t>> & ordered_buff);
+  visualization_msgs::msg::MarkerArray ordered_pointcloud_markers_;
+  int debug_current_ring = -1;
+  int debug_current_scan = -1;
+
+  void fixClusters(
+    const std::vector<std::vector<LidarPoints_t>> & edge_buff,
+    std::vector<ClusterFamily_t> & cluster_buff);
+
 
 }; // GrizTag
 } // namespace BipedLab

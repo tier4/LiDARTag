@@ -28,6 +28,9 @@
  * AUTHOR: Bruce JK Huang (bjhuang@umich.edu)
  * WEBSITE: https://www.brucerobot.com/
  */
+
+#pragma once
+
 #include "nanoflann.hpp"
 #include <Eigen/Core>
 #include <Eigen/Sparse>
@@ -194,6 +197,25 @@ typedef struct {
   point right;
 } corners;
 
+enum class LidartagErrorCode //C++11 scoped enum
+{
+  NoError = 0,
+  ClusterMinPointsCriteria,
+  ClusterMinPointsCriteria2,
+  PlanarCheckCriteria,
+  PlanarOutliersCriteria,
+  DecodingPointsCriteria,
+  DecodingRingsCriteria,
+  CornerEstimationMinPointsCriteria,
+  Line1EstimationCriteria,
+  Line2EstimationCriteria,
+  Line3EstimationCriteria,
+  Line4EstimationCriteria,
+  TagSizeEstimationCriteria,
+  OptimizationErrorCriteria,
+  DecodingErrorCriteria
+};
+
 typedef struct ClusterFamily {
   // EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   int cluster_id;
@@ -279,12 +301,9 @@ typedef struct ClusterFamily {
    */
   std::vector<Eigen::VectorXf>
       line_coeff; // Upper, left, bottom, right line (count-clockwise)
-  int detail_valid;
+  LidartagErrorCode detail_valid;
   int pose_estimation_status;
   int expected_points;
-
-  std::vector<point> corner_offset_array;
-  std::vector<point> boundary_corner_offset_array;
 
 } ClusterFamily_t;
 
