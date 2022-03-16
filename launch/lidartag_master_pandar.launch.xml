@@ -85,6 +85,7 @@
 
       <!--  LiDAR System  -->
       <param name="pointcloud_topic" value="$(var pointcloud_topic)" />
+      <param name="max_queue_size" value="1" />
       <param name="beam_number" value="40" />
       <param name="vertical_fov" value="40.0" />
       <param name="num_accumulation" value="1" />

@@ -226,6 +226,7 @@ private:
   std::string lidar_frame_;        // publish under what frame?
   // Overall LiDAR system parameters
   LiDARSystem_t lidar_system_;
+  int max_queue_size_;
   int beam_num_;
   double vertical_fov_;
 
