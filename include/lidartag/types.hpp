@@ -200,20 +200,21 @@ typedef struct {
 enum class LidartagErrorCode //C++11 scoped enum
 {
   NoError = 0,
-  ClusterMinPointsCriteria,
-  ClusterMinPointsCriteria2,
-  PlanarCheckCriteria,
-  PlanarOutliersCriteria,
-  DecodingPointsCriteria,
-  DecodingRingsCriteria,
-  CornerEstimationMinPointsCriteria,
-  Line1EstimationCriteria,
-  Line2EstimationCriteria,
-  Line3EstimationCriteria,
-  Line4EstimationCriteria,
-  TagSizeEstimationCriteria,
-  OptimizationErrorCriteria,
-  DecodingErrorCriteria
+  ClusterMinPointsCriteria = 1,
+  ClusterMinPointsCriteria2 = 2,
+  PlanarCheckCriteria = 3,
+  PlanarOutliersCriteria = 4,
+  DecodingPointsCriteria = 5,
+  DecodingRingsCriteria = 6,
+  CornerEstimationMinPointsCriteria = 7,
+  Line1EstimationCriteria = 8,
+  Line2EstimationCriteria = 9,
+  Line3EstimationCriteria = 10,
+  Line4EstimationCriteria = 11,
+  RectangleEstimationCirteria = 12,
+  TagSizeEstimationCriteria = 13,
+  OptimizationErrorCriteria = 14,
+  DecodingErrorCriteria = 15
 };
 
 typedef struct ClusterFamily {
@@ -237,6 +238,7 @@ typedef struct ClusterFamily {
   pcl::PointCloud<LidarPoints_t> data; // data doesn't have edge points
   pcl::PointCloud<LidarPoints_t> edge_points;
   pcl::PointCloud<LidarPoints_t> transformed_edge_points;
+  pcl::PointCloud<PointXYZRI> initial_corners;
 
   // If the first point of the ring is the cluster.
   // If so, the the indices fo the two sides will be far away

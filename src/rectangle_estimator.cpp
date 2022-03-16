@@ -25,6 +25,7 @@ RectangleEstimator::RectangleEstimator()
   filter_by_coefficients_ = true;
   max_ransac_iterations_ = 20;
   max_error_ = 0.05;
+  fix_point_groups_ = false;
 
   augmented_matrix_.resize(111, 6);
 }
@@ -39,6 +40,12 @@ void RectangleEstimator::setInputPoints(
   points2_ = points2;
   points3_ = points3;
   points4_ = points4;
+
+  points.clear();
+  points += *points1;
+  points += *points2;
+  points += *points3;
+  points += *points4;
 }
 
 bool RectangleEstimator::estimate()
@@ -62,8 +69,14 @@ bool RectangleEstimator::estimate()
     status = estimate_imlp(points1_, points2_, points3_, points4_, estimated_n, estimated_c);
   }
 
+  bool status_tmp = status;
+
   if (status && filter_by_coefficients_) {
     status = checkCoefficients();
+  }
+
+  if(status != status_tmp) {
+    bool asd = 0;
   }
 
   return status;
@@ -89,10 +102,17 @@ bool RectangleEstimator::estimate_ransac()
   auto sample_points = [&](auto & in_points, auto & out_points)
   {
     out_points->clear();
-    std::uniform_int_distribution<std::mt19937::result_type> dist(0,in_points->points.size() - 1);
+    //std::uniform_int_distribution<std::mt19937::result_type> dist(0,in_points->points.size() - 1);
+    std::vector<int> index_vector;
+    for (int i=0; i < in_points->points.size(); ++i) {
+      index_vector.push_back(i);
+    }
+
+    std::random_shuffle ( index_vector.begin(), index_vector.end() );
 
     for(int i = 0; i < ransac_min_points; i++) {
-      int input_index = dist(rng);
+      //int input_index = dist(rng);
+      int input_index = index_vector[i];
       out_points->push_back(in_points->points[input_index]);
     }
   };
@@ -100,6 +120,9 @@ bool RectangleEstimator::estimate_ransac()
   double min_error = 1e12;
   int max_inliers = 0;
   bool status = false;
+
+  Eigen::VectorXd errors1, errors2, errors3, errors4;
+  std::vector<Eigen::Vector2d> inlier_vector;
 
   for (int i = 0; i < max_ransac_iterations_; i++) {
 
@@ -113,9 +136,10 @@ bool RectangleEstimator::estimate_ransac()
 
     bool h_status = estimate_imlp(points1, points2, points3, points4, h_n, h_c);
     int h_inliers = 0;
-    std::vector<Eigen::Vector2d> inlier_vector;
+
     double error = getModelErrorAndInliers(h_n, h_c, h_inliers,
-      inlier_vector, inlier_vector, inlier_vector, inlier_vector, false);
+      inlier_vector, inlier_vector, inlier_vector, inlier_vector,
+      errors1, errors2, errors3, errors4, false);
 
     //std::cout << "Iteration=" << i << " h_Inliers=" << h_inliers << " h_error=" << error << std::endl;
     //std::cout << "Augmented matrix\n" << augmented_matrix_ << std::endl;
@@ -128,6 +152,11 @@ bool RectangleEstimator::estimate_ransac()
       estimated_n = h_n;
       estimated_c = h_c;
       status = h_status;
+
+      if (fix_point_groups_) {
+        fixPointGroups(errors1, errors2, errors3, errors4);
+      }
+
     }
   }
 
@@ -143,7 +172,8 @@ bool RectangleEstimator::estimate_ransac()
   std::vector<Eigen::Vector2d> inliers1, inliers2, inliers3, inliers4;
 
   double error = getModelErrorAndInliers(estimated_n, estimated_c, inliers,
-    inliers1, inliers2, inliers3, inliers4, true);
+    inliers1, inliers2, inliers3, inliers4,
+    errors1, errors2, errors3, errors4, true);
 
   auto eigen_to_pointcloud = [&](std::vector<Eigen::Vector2d> & inliers_vector,
     auto & points)
@@ -310,11 +340,16 @@ void RectangleEstimator::setInlierError(double error)
   max_error_ = error;
 }
 
+void RectangleEstimator::setFixPointGroups(bool enable)
+{
+  fix_point_groups_ = enable;
+}
+
 bool RectangleEstimator::checkCoefficients() const
 {
   Eigen::Vector2d reference(1.0, 1.0);
   reference.normalize();
-  double max_cos_distance = std::cos(30.0 * M_PI / 180.0);
+  double max_cos_distance = std::cos(45.0 * M_PI / 180.0);
 
   return estimated_n.dot(reference) >= max_cos_distance;
 }
@@ -346,6 +381,8 @@ double RectangleEstimator::getModelErrorAndInliers(
   Eigen::Vector2d & n, Eigen::Vector4d & c, int & inliers,
   std::vector<Eigen::Vector2d> & inliers1, std::vector<Eigen::Vector2d> & inliers2,
   std::vector<Eigen::Vector2d> & inliers3, std::vector<Eigen::Vector2d> & inliers4,
+  Eigen::VectorXd & errors1, Eigen::VectorXd & errors2,
+  Eigen::VectorXd & errors3, Eigen::VectorXd & errors4,
   bool add_inliers)
 {
   Eigen::Vector2d n1 = n;
@@ -380,10 +417,15 @@ double RectangleEstimator::getModelErrorAndInliers(
   double t3_min = std::min(t3_1, t3_2);
   double t3_max = std::max(t3_1, t3_2);
 
-  Eigen::VectorXd error1(points_matrix_.rows());
-  Eigen::VectorXd error2(points_matrix_.rows());
-  Eigen::VectorXd error3(points_matrix_.rows());
-  Eigen::VectorXd error4(points_matrix_.rows());
+  //Eigen::VectorXd error1(points_matrix_.rows());
+  //Eigen::VectorXd error2(points_matrix_.rows());
+  //Eigen::VectorXd error3(points_matrix_.rows());
+  //Eigen::VectorXd error4(points_matrix_.rows());
+
+  errors1.resize(points_matrix_.rows());
+  errors2.resize(points_matrix_.rows());
+  errors3.resize(points_matrix_.rows());
+  errors4.resize(points_matrix_.rows());
 
   auto calculate_line_error = [&](
     Eigen::Vector2d & p0,
@@ -409,12 +451,12 @@ double RectangleEstimator::getModelErrorAndInliers(
     }
   };
 
-  calculate_line_error(p0, d0_paralell, d0_perpendicular, t0_min, t0_max, error1, inliers1);
-  calculate_line_error(p1, d1_paralell, d1_perpendicular, t1_min, t1_max, error2, inliers2);
-  calculate_line_error(p2, d0_paralell, d0_perpendicular, t2_min, t2_max, error3, inliers3);
-  calculate_line_error(p3, d1_paralell, d1_perpendicular, t3_min, t3_max, error4, inliers4);
+  calculate_line_error(p0, d0_paralell, d0_perpendicular, t0_min, t0_max, errors1, inliers1);
+  calculate_line_error(p1, d1_paralell, d1_perpendicular, t1_min, t1_max, errors2, inliers2);
+  calculate_line_error(p2, d0_paralell, d0_perpendicular, t2_min, t2_max, errors3, inliers3);
+  calculate_line_error(p3, d1_paralell, d1_perpendicular, t3_min, t3_max, errors4, inliers4);
 
-  Eigen::VectorXd error = error1.cwiseMin(error2).cwiseMin(error3).cwiseMin(error4);
+  Eigen::VectorXd error = errors1.cwiseMin(errors2).cwiseMin(errors3).cwiseMin(errors4);
 
   inliers = 0;
 
@@ -425,4 +467,68 @@ double RectangleEstimator::getModelErrorAndInliers(
   }
 
   return error.mean();
+}
+
+void RectangleEstimator::fixPointGroups(
+  Eigen::VectorXd & errors1, Eigen::VectorXd & errors2,
+  Eigen::VectorXd & errors3, Eigen::VectorXd & errors4)
+{
+  assert(points.size() == errors1.rows());
+
+  Eigen::VectorXd min_errors = errors1.cwiseMin(errors2).cwiseMin(errors3).cwiseMin(errors4);
+
+  int num_points1 = 0;
+  int num_points2 = 0;
+  int num_points3 = 0;
+  int num_points4 = 0;
+
+  for(int i = 0; i < points.size(); i++){
+    if (errors1(i) == min_errors(i)) {
+      num_points1++;
+    }
+    else if (errors2(i) == min_errors(i)) {
+      num_points2++;
+    }
+    else if (errors3(i) == min_errors(i)) {
+      num_points3++;
+    }
+    else if (errors4(i) == min_errors(i)) {
+      num_points4++;
+    }
+    else {
+      assert(false);
+    }
+  }
+
+  if (num_points1 < 3 || num_points2 < 3 || num_points3 < 3 || num_points4 < 3) {
+    return;
+  }
+
+  points1_->clear();
+  points2_->clear();
+  points3_->clear();
+  points4_->clear();
+
+  for(int i = 0; i < points.size(); i++){
+    if (errors1(i) == min_errors(i)) {
+      points1_->push_back(points[i]);
+    }
+    else if (errors2(i) == min_errors(i)) {
+      points2_->push_back(points[i]);
+    }
+    else if (errors3(i) == min_errors(i)) {
+      points3_->push_back(points[i]);
+    }
+    else if (errors4(i) == min_errors(i)) {
+      points4_->push_back(points[i]);
+    }
+    else {
+      assert(false);
+    }
+  }
+
+  assert(points1_->size() >= 2);
+  assert(points2_->size() >= 2);
+  assert(points3_->size() >= 2);
+  assert(points4_->size() >= 2);
 }

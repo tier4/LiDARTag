@@ -91,7 +91,7 @@ namespace BipedLab
 {
 LidarTag::LidarTag(const rclcpp::NodeOptions & options) :
   Node("lidar_tag_node", options), broadcaster_(*this), point_cloud_received_(0),
-  clock_(this->get_clock()), pub_frame_("velodyne"), // what frame of the published pointcloud should be
+  clock_(this->get_clock()), lidar_frame_("velodyne"), // what frame of the published pointcloud should be
   stop_(0)
 {
   LidarTag::getParameters();
@@ -127,6 +127,7 @@ LidarTag::LidarTag(const rclcpp::NodeOptions & options) :
   edge3_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("edge_group_3", 10);
   edge4_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("edge_group_4", 10);
   boundary_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("boundary_pts", 10);
+  initial_corners_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("initial_corners", 10);
   cluster_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("detected_pc", 10);
   payload_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("associated_pattern_3d", 10);
   payload3d_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("template_points_3d", 10);
@@ -230,11 +231,13 @@ rcl_interfaces::msg::SetParametersResult LidarTag::paramCallback(
     UPDATE_LIDARTAG_PARAM(params, cluster_max_points_size);
     UPDATE_LIDARTAG_PARAM(params, cluster_min_points_size);
     UPDATE_LIDARTAG_PARAM(params, depth_bound);
+    UPDATE_LIDARTAG_PARAM(params, min_rkhs_score);
     UPDATE_LIDARTAG_PARAM(params, optional_fix_cluster);
     UPDATE_LIDARTAG_PARAM(params, use_rectangle_model);
     UPDATE_LIDARTAG_PARAM(params, rectangle_model_use_ransac);
     UPDATE_LIDARTAG_PARAM(params, rectangle_model_max_iterations);
     UPDATE_LIDARTAG_PARAM(params, rectangle_model_max_error);
+    UPDATE_LIDARTAG_PARAM(params, rectangle_fix_point_groups);
     UPDATE_LIDARTAG_PARAM(params, refine_cluster_with_intersections);
     UPDATE_LIDARTAG_PARAM(params, debug_single_pointcloud);
     UPDATE_LIDARTAG_PARAM(params, debug_point_x);
@@ -254,8 +257,9 @@ rcl_interfaces::msg::SetParametersResult LidarTag::paramCallback(
   // These parameters are linked , so it is better to update them like this
   params_.linkage_threshold = params_.linkage_tunable * payload_size_ * clearance_;
 
-  rectangle_estimator_->setFilterByCoefficients(true);
+  rectangle_estimator_->setFilterByCoefficients(false);
   rectangle_estimator_->setInlierError(params_.rectangle_model_max_error);
+  rectangle_estimator_->setFixPointGroups(params_.rectangle_fix_point_groups);
   rectangle_estimator_->setMaxIterations(params_.rectangle_model_max_iterations);
   rectangle_estimator_->setRANSAC(params_.rectangle_model_use_ransac);
 
@@ -284,6 +288,7 @@ void LidarTag::mainLoop()
   pcl::PointCloud<PointXYZRI>::Ptr edge_group2(new pcl::PointCloud<PointXYZRI>);
   pcl::PointCloud<PointXYZRI>::Ptr edge_group3(new pcl::PointCloud<PointXYZRI>);
   pcl::PointCloud<PointXYZRI>::Ptr edge_group4(new pcl::PointCloud<PointXYZRI>);
+  pcl::PointCloud<PointXYZRI>::Ptr initial_corners_pc(new pcl::PointCloud<PointXYZRI>);
 
   clusterpc->reserve(point_cloud_size_);
   clusteredgepc->reserve(point_cloud_size_);
@@ -296,6 +301,7 @@ void LidarTag::mainLoop()
   payloadpc->reserve(point_cloud_size_);
   payload3dpc->reserve(point_cloud_size_);
   boundarypc->reserve(point_cloud_size_);
+  initial_corners_pc->reserve(point_cloud_size_);
 
   int valgrind_check = 0;
 
@@ -371,6 +377,7 @@ void LidarTag::mainLoop()
     edge_group2->clear();
     edge_group3->clear();
     edge_group4->clear();
+    initial_corners_pc->clear();
 
     ordered_pointcloud_markers_pub_->publish(ordered_pointcloud_markers_);
     ordered_pointcloud_markers_.markers.clear();
@@ -385,35 +392,36 @@ void LidarTag::mainLoop()
 
     LidarTag::clusterToPclVectorAndMarkerPublisher(
       clusterbuff, clusterpc, clusteredgepc, payloadpc, payload3dpc, tagpc, ini_tagpc, edge_group1,
-      edge_group2, edge_group3, edge_group4, boundarypc, cluster_markers);
+      edge_group2, edge_group3, edge_group4, boundarypc, initial_corners_pc, cluster_markers);
 
     // publish lidartag corners
     // publish results for rviz
     LidarTag::plotIdealFrame();
-    LidarTag::publishPointcloud(extracted_poi_pc, pub_frame_, string("wholeedge"));
-    LidarTag::publishPointcloud(clusteredgepc, pub_frame_, string("clusteredgepc"));
-    LidarTag::publishPointcloud(clusterpc, pub_frame_, string("cluster"));
-    LidarTag::publishPointcloud(edge_group1, pub_frame_, string("edgegroup1"));
-    LidarTag::publishPointcloud(edge_group2, pub_frame_, string("edgegroup2"));
-    LidarTag::publishPointcloud(edge_group3, pub_frame_, string("edgegroup3"));
-    LidarTag::publishPointcloud(edge_group4, pub_frame_, string("edgegroup4"));
-    LidarTag::publishPointcloud(boundarypc, pub_frame_, string("boundarypc"));
+    LidarTag::publishPointcloud(extracted_poi_pc, lidar_frame_, string("wholeedge"));
+    LidarTag::publishPointcloud(clusteredgepc, lidar_frame_, string("clusteredgepc"));
+    LidarTag::publishPointcloud(clusterpc, lidar_frame_, string("cluster"));
+    LidarTag::publishPointcloud(edge_group1, lidar_frame_, string("edgegroup1"));
+    LidarTag::publishPointcloud(edge_group2, lidar_frame_, string("edgegroup2"));
+    LidarTag::publishPointcloud(edge_group3, lidar_frame_, string("edgegroup3"));
+    LidarTag::publishPointcloud(edge_group4, lidar_frame_, string("edgegroup4"));
+    LidarTag::publishPointcloud(boundarypc, lidar_frame_, string("boundarypc"));
+    LidarTag::publishPointcloud(initial_corners_pc, lidar_frame_, string("initialcornerspc"));
 
     if (collect_dataset_) {
       if (result_statistics_.remaining_cluster_size == 1) {
-        LidarTag::publishPointcloud(payloadpc, pub_frame_, string("payload"));
-        LidarTag::publishPointcloud(payload3dpc, pub_frame_, string("payload3d"));
-        LidarTag::publishPointcloud(tagpc, pub_frame_, string("target"));
-        LidarTag::publishPointcloud(ini_tagpc, pub_frame_, string("initialtarget"));
+        LidarTag::publishPointcloud(payloadpc, lidar_frame_, string("payload"));
+        LidarTag::publishPointcloud(payload3dpc, lidar_frame_, string("payload3d"));
+        LidarTag::publishPointcloud(tagpc, lidar_frame_, string("target"));
+        LidarTag::publishPointcloud(ini_tagpc, lidar_frame_, string("initialtarget"));
       } else if (result_statistics_.remaining_cluster_size > 1)
         cout << "More than one!! " << endl;
       else
         cout << "Zero!! " << endl;
     } else {
-      LidarTag::publishPointcloud(payloadpc, pub_frame_, string("payload"));
-      LidarTag::publishPointcloud(payload3dpc, pub_frame_, string("payload3d"));
-      LidarTag::publishPointcloud(tagpc, pub_frame_, string("target"));
-      LidarTag::publishPointcloud(ini_tagpc, pub_frame_, string("initialtarget"));
+      LidarTag::publishPointcloud(payloadpc, lidar_frame_, string("payload"));
+      LidarTag::publishPointcloud(payload3dpc, lidar_frame_, string("payload3d"));
+      LidarTag::publishPointcloud(tagpc, lidar_frame_, string("target"));
+      LidarTag::publishPointcloud(ini_tagpc, lidar_frame_, string("initialtarget"));
     }
 
     if (sleep_to_display_) {
@@ -446,7 +454,6 @@ void LidarTag::getParameters() {
 
   std::string tag_size_string;
 
-  this->declare_parameter<std::string>("frame_name");
   this->declare_parameter<double>("distance_threshold");
   this->declare_parameter<int>("sleep_to_display");
   this->declare_parameter<double>("sleep_time_for_visulization");
@@ -529,9 +536,10 @@ void LidarTag::getParameters() {
   this->declare_parameter<bool>("rectangle_model_use_ransac");
   this->declare_parameter<int>("rectangle_model_max_iterations");
   this->declare_parameter<double>("rectangle_model_max_error");
+  this->declare_parameter<bool>("rectangle_fix_point_groups");
   this->declare_parameter<bool>("refine_cluster_with_intersections");
+  this->declare_parameter<double>("min_rkhs_score");
 
-  bool GotPubFrame = this->get_parameter("frame_name", pub_frame_);
   bool GotThreshold = this->get_parameter("distance_threshold", distance_threshold_);
   bool GotSleepToDisplay = this->get_parameter("sleep_to_display", sleep_to_display_);
   bool GotSleepTimeForVis = this->get_parameter("sleep_time_for_visulization", sleep_time_for_vis_);
@@ -633,12 +641,18 @@ void LidarTag::getParameters() {
     params_.rectangle_model_max_iterations);
   bool GotRectangleMaxError = this->get_parameter("rectangle_model_max_error",
     params_.rectangle_model_max_error);
+  bool GotRectangleFixPointGroups = this->get_parameter("rectangle_fix_point_groups",
+    params_.rectangle_fix_point_groups);
+
+
   bool GotRefineClusterWithInteractions = this->get_parameter("refine_cluster_with_intersections",
     params_.refine_cluster_with_intersections);
+  bool GotMinRKHSScore = this->get_parameter("min_rkhs_score", params_.min_rkhs_score);
 
   rectangle_estimator_ = std::make_shared<RectangleEstimator>();
-  rectangle_estimator_->setFilterByCoefficients(true);
+  rectangle_estimator_->setFilterByCoefficients(false);
   rectangle_estimator_->setInlierError(params_.rectangle_model_max_error);
+  rectangle_estimator_->setFixPointGroups(params_.rectangle_fix_point_groups);
   rectangle_estimator_->setMaxIterations(params_.rectangle_model_max_iterations);
   rectangle_estimator_->setRANSAC(params_.rectangle_model_use_ransac);
 
@@ -646,7 +660,7 @@ void LidarTag::getParameters() {
   tag_size_list_.assign( std::istream_iterator<double>( is ), std::istream_iterator<double>() );
 
   bool pass = utils::checkParameters(
-    {GotPubFrame, GotFakeTag, GotBeamNum, GotOptPose, GotDecodeId, GotPlaneFitting,
+    {GotFakeTag, GotBeamNum, GotOptPose, GotDecodeId, GotPlaneFitting,
     GotOutPutPath, GotDistanceBound, GotDepthBound, GotTagFamily, GotTagHamming,
     GotMaxDecodeHamming, GotFineClusterThreshold, GotVerticalFOV, GotFillInGapThreshold,
     GotMaxOutlierRatio, GotPointsThresholdFactor, GotDistanceToPlaneThreshold,
@@ -662,7 +676,7 @@ void LidarTag::getParameters() {
     GotDebugPointY, GotDebugPointZ, GotDebugClusterId, GotDebugRingId, GotDebugScanId,
     GotVisualizeCluster, GotClearance, GotOptionalFixCluster, GotUSeRectangleModel,
     GotRectangleModelUseRansac, GotRectangleModelMaxIterations, GotRectangleMaxError,
-    GotRefineClusterWithInteractions});
+    GotRefineClusterWithInteractions, GotMinRKHSScore});
 
   if (!pass) {
     rclcpp::shutdown();
@@ -968,11 +982,13 @@ void LidarTag::publishPointcloud(
       edge4_pub_->publish(pcs_waited_to_pub);
     else if (which_publisher == "boundarypc")
       boundary_pub_->publish(pcs_waited_to_pub);
+    else if (which_publisher == "initialcornerspc")
+      initial_corners_pub_->publish(pcs_waited_to_pub);
     else if (which_publisher == "initialtarget")
       initag_pub_->publish(pcs_waited_to_pub);
     else if (which_publisher == "clusteredgepc") {
       pcs_waited_to_pub.header.stamp = current_scan_time_;
-      pcs_waited_to_pub.header.frame_id = pub_frame_;
+      pcs_waited_to_pub.header.frame_id = lidar_frame_;
       clustered_points_pub_->publish(pcs_waited_to_pub);
     }
     else if (which_publisher == "transpts")
@@ -995,6 +1011,8 @@ void LidarTag::publishPointcloud(
  */
 void LidarTag::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr pc)
 {
+  lidar_frame_ = pc->header.frame_id;
+
   // flag to make sure it receives a pointcloud
   // at the very begining of the program
 
@@ -1346,7 +1364,7 @@ int LidarTag::getEdgePoints(
 
     visualization_msgs::msg::Marker marker;
 
-    marker.header.frame_id = pub_frame_;
+    marker.header.frame_id = lidar_frame_;
     marker.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
     marker.action = visualization_msgs::msg::Marker::ADD;
     marker.lifetime = rclcpp::Duration::from_seconds(5.0);
@@ -1421,6 +1439,7 @@ void LidarTag::fillInCluster(
 
   // tbb::parallel_for(int(0), (int)cluster_buff.size(), [&](int i) {
   for (int i = 0; i < cluster_buff.size(); ++i) {
+    ClusterFamily_t & cluster = cluster_buff[i];
     // In a cluster
     // tbb::parallel_for(int(0), (int)cluster_buff.size(), [&](int i) {
     if (debug_time_) {
@@ -1428,10 +1447,10 @@ void LidarTag::fillInCluster(
     }
 
     for (int j = 0; j < beam_num_; ++j) {
-      int max_index = cluster_buff[i].max_min_index_of_each_ring[j].max;
-      int min_index = cluster_buff[i].max_min_index_of_each_ring[j].min;
+      int max_index = cluster.max_min_index_of_each_ring[j].max;
+      int min_index = cluster.max_min_index_of_each_ring[j].min;
 
-      /*if (cluster_buff[i].cluster_id == params_.debug_cluster_id &&
+      /*if (cluster.cluster_id == params_.debug_cluster_id &&
         j == params_.debug_ring_id)
       {
         int x = 0;
@@ -1459,28 +1478,28 @@ void LidarTag::fillInCluster(
         // (it has been in the cloud already)
         for (int k = min_index + 1; k < max_index; ++k) {
           // cout << "k1: " << k << endl;
-          if (isWithinClusterHorizon(ordered_buff[j][k], cluster_buff[i], 0)) {
-            cluster_buff[i].data.push_back(ordered_buff[j][k]);
+          if (isWithinClusterHorizon(ordered_buff[j][k], cluster, 0)) {
+            cluster.data.push_back(ordered_buff[j][k]);
           }
         }
-        cluster_buff[i].special_case = 0;
+        cluster.special_case = 0;
       } else {
         for (int k = 0; k < min_index; ++k) {
           // cout << "k2: " << k << endl;
 
-          if (isWithinClusterHorizon(ordered_buff[j][k], cluster_buff[i], 0)) {
-            cluster_buff[i].data.push_back(ordered_buff[j][k]);
+          if (isWithinClusterHorizon(ordered_buff[j][k], cluster, 0)) {
+            cluster.data.push_back(ordered_buff[j][k]);
           }
         }
         for (int k = max_index; k < ordered_buff[j].size(); ++k) {
           // cout << "k3: " << k << endl;
 
-          if (isWithinClusterHorizon(ordered_buff[j][k], cluster_buff[i], 0)) {
-            cluster_buff[i].data.push_back(ordered_buff[j][k]);
+          if (isWithinClusterHorizon(ordered_buff[j][k], cluster, 0)) {
+            cluster.data.push_back(ordered_buff[j][k]);
           }
         }
 
-        cluster_buff[i].special_case = 1;
+        cluster.special_case = 1;
       }
     }
 
@@ -1494,22 +1513,22 @@ void LidarTag::fillInCluster(
     auto min_returns =
       min_returns_per_grid_ * std::pow((std::sqrt(tag_family_) + 2 * black_border_), 2);
 
-    if ((cluster_buff[i].data.size() + cluster_buff[i].edge_points.size()) < min_returns) {
+    if ((cluster.data.size() + cluster.edge_points.size()) < min_returns) {
       result_statistics_.cluster_removal.minimum_return++;
       result_statistics_.remaining_cluster_size--;
 
       if (mark_cluster_validity_) {
-        cluster_buff[i].valid = false;
-        cluster_buff[i].detail_valid = LidartagErrorCode::ClusterMinPointsCriteria;
+        cluster.valid = false;
+        cluster.detail_valid = LidartagErrorCode::ClusterMinPointsCriteria;
       }
       // tbb::task::self().cancel_group_execution();
       continue;
     }
 
     // Mark cluster as invalid if too many points in cluster
-    cluster_buff[i].expected_points = maxPointsCheck(cluster_buff[i]);
+    cluster.expected_points = maxPointsCheck(cluster);
 
-    if (cluster_buff[i].valid == false) {
+    if (cluster.valid == false) {
       // tbb::task::self().cancel_group_execution();
       continue;
     }
@@ -1526,10 +1545,10 @@ void LidarTag::fillInCluster(
     } else {
       pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
       pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-      if (!rejectWithPlanarCheck(cluster_buff[i], inliers, coefficients, fplanefit)) {
+      if (!rejectWithPlanarCheck(cluster, inliers, coefficients, fplanefit)) {
         if (mark_cluster_validity_) {
-          cluster_buff[i].valid = false;
-          cluster_buff[i].detail_valid = LidartagErrorCode::PlanarCheckCriteria;
+          cluster.valid = false;
+          cluster.detail_valid = LidartagErrorCode::PlanarCheckCriteria;
         }
         // tbb::task::self().cancel_group_execution();
         continue;
@@ -1538,18 +1557,18 @@ void LidarTag::fillInCluster(
       // Mark cluster as invalid if too many outliers in plane fitting
       auto percentage_inliers =
         inliers->indices.size() /
-        double(cluster_buff[i].data.size() + cluster_buff[i].edge_points.size());
+        double(cluster.data.size() + cluster.edge_points.size());
 
-      cluster_buff[i].percentages_inliers = percentage_inliers;
+      cluster.percentages_inliers = percentage_inliers;
 
       if (debug_info_) {
         RCLCPP_DEBUG_STREAM(get_logger(), "==== _planeOutliers ====");
         float distance = std::sqrt(
-          pow(cluster_buff[i].average.x, 2) + pow(cluster_buff[i].average.y, 2) +
-          pow(cluster_buff[i].average.z, 2));
+          pow(cluster.average.x, 2) + pow(cluster.average.y, 2) +
+          pow(cluster.average.z, 2));
         RCLCPP_DEBUG_STREAM(get_logger(), "Distance : " << distance);
         RCLCPP_DEBUG_STREAM(get_logger(),
-          "Actual Points: " << cluster_buff[i].data.size() + cluster_buff[i].edge_points.size());
+          "Actual Points: " << cluster.data.size() + cluster.edge_points.size());
       }
 
       if (percentage_inliers < (1.0 - params_.max_outlier_ratio)) {
@@ -1561,8 +1580,8 @@ void LidarTag::fillInCluster(
         result_statistics_.remaining_cluster_size--;
 
         if (mark_cluster_validity_) {
-          cluster_buff[i].valid = false;
-          cluster_buff[i].detail_valid = LidartagErrorCode::PlanarOutliersCriteria;
+          cluster.valid = false;
+          cluster.detail_valid = LidartagErrorCode::PlanarOutliersCriteria;
           continue;
         }
       }
@@ -1573,22 +1592,22 @@ void LidarTag::fillInCluster(
 
       // Remove all outliers from cluster
       auto outliers_indices = utils::complementOfSet(
-        inliers->indices, (cluster_buff[i].data.size() + cluster_buff[i].edge_points.size()));
+        inliers->indices, (cluster.data.size() + cluster.edge_points.size()));
 
-      int edge_inlier = cluster_buff[i].edge_points.size();
+      int edge_inlier = cluster.edge_points.size();
 
       for (int k = 0; k < outliers_indices.size(); ++k) {
         int out_index = outliers_indices[k];
 
-        if (out_index < cluster_buff[i].edge_points.size()) {
+        if (out_index < cluster.edge_points.size()) {
           edge_inlier -= 1;
-          cluster_buff[i].edge_points[out_index].valid = 0;
+          cluster.edge_points[out_index].valid = 0;
         } else {
-          cluster_buff[i].data[out_index - cluster_buff[i].edge_points.size()].valid = 0;
+          cluster.data[out_index - cluster.edge_points.size()].valid = 0;
         }
       }
 
-      cluster_buff[i].edge_inliers = edge_inlier;
+      cluster.edge_inliers = edge_inlier;
 
       if (debug_time_) {
         timing_.plane_fitting_removal_time +=
@@ -1597,17 +1616,17 @@ void LidarTag::fillInCluster(
       }
     }
 
-    if (!LidarTag::adaptiveThresholding(cluster_buff[i])) {
+    if (!LidarTag::adaptiveThresholding(cluster)) {
       // removal has been done inside the function
       if (mark_cluster_validity_) {
-        cluster_buff[i].valid = false;
+        cluster.valid = false;
       }
       // cluster_buff.erase(cluster_buff.begin()+i);
       // i--;
     } else {
       if (print_ros_info_ || debug_info_) {
-        RCLCPP_INFO_STREAM(get_logger(), "--ID: " << cluster_buff[i].cluster_id);
-        RCLCPP_INFO_STREAM(get_logger(), "---rotation: " <<  cluster_buff[i].rkhs_decoding.rotation_angle);
+        RCLCPP_INFO_STREAM(get_logger(), "--ID: " << cluster.cluster_id);
+        RCLCPP_INFO_STREAM(get_logger(), "---rotation: " <<  cluster.rkhs_decoding.rotation_angle);
       }
     }
     // }
@@ -1805,7 +1824,7 @@ void LidarTag::tagToRobot(
 
   geometry_msgs::msg::TransformStamped transform_msg;
   transform_msg.header.stamp = point_cloud_header_.stamp;
-  transform_msg.header.frame_id = pub_frame_;
+  transform_msg.header.frame_id = lidar_frame_;
   transform_msg.child_frame_id = to_string(cluster_id)+"_rotated";
   transform_msg.transform = tf2::toMsg(transform);
 
@@ -1814,7 +1833,7 @@ void LidarTag::tagToRobot(
   tf2::Quaternion q2(normal_vec(0), normal_vec(1), normal_vec(2), 0);
   transform.setRotation(q2);
   transform_msg.header.stamp = point_cloud_header_.stamp;
-  transform_msg.header.frame_id = pub_frame_;
+  transform_msg.header.frame_id = lidar_frame_;
   transform_msg.child_frame_id = "LidarTag-ID" + to_string(cluster_id);
   transform_msg.transform = tf2::toMsg(transform);
 
@@ -2321,6 +2340,23 @@ bool LidarTag::estimateCornersUsingRectangleFitting(ClusterFamily_t & cluster,
   rectangle_estimator_->setInputPoints(cloud1, cloud2, cloud3, cloud4);
 
   if (!rectangle_estimator_->estimate()) {
+    cluster.detail_valid = LidartagErrorCode::RectangleEstimationCirteria;
+
+    cloud1->width = cloud1->size();
+    cloud2->width = cloud2->size();
+    cloud3->width = cloud3->size();
+    cloud4->width = cloud4->size();
+
+    cloud1->height = 1;
+    cloud2->height = 1;
+    cloud3->height = 1;
+    cloud4->height = 1;
+
+    //pcl::io::savePCDFileASCII ("cloud1.pcd", *cloud1);
+    //pcl::io::savePCDFileASCII ("cloud2.pcd", *cloud2);
+    //pcl::io::savePCDFileASCII ("cloud3.pcd", *cloud3);
+    //pcl::io::savePCDFileASCII ("cloud4.pcd", *cloud4);
+
     return false;
   }
 
@@ -2388,7 +2424,7 @@ bool LidarTag::transformSplitEdges(ClusterFamily_t & cluster)
 
   pcl::toROSMsg(*before_transformed_edge_pc, before_transformed_edge_pc_msg);
   before_transformed_edge_pc_msg.header = point_cloud_header_;
-  before_transformed_edge_pc_msg.header.frame_id = pub_frame_;
+  before_transformed_edge_pc_msg.header.frame_id = lidar_frame_;
   beforetransformed_edge_pc_pub_->publish(before_transformed_edge_pc_msg);
 
   for (int i = 0; i < cluster.edge_points.size(); ++i) {
@@ -2474,10 +2510,44 @@ bool LidarTag::transformSplitEdges(ClusterFamily_t & cluster)
   }
 
 
+  // The data from these functions is only to visualize the new groups
+  auto cloud_to_edge_group = [&](
+    pcl::PointCloud<pcl::PointXYZ> & cloud,
+    pcl::PointCloud<LidarPoints_t> & edges,
+    int intensity)
+  {
+    edges.clear();
+
+    LidarPoints_t group_point = edges[0];
+    group_point.point.intensity = intensity;
+    group_point.valid = 1;
+
+    edges.clear();
+    Eigen::Vector3f translation = Eigen::Vector3f(cluster.average.x, cluster.average.y, cluster.average.z);
+
+    for (int i = 0; i < cloud.size(); ++i) {
+      Eigen::Vector3f point(cloud[i].x, cloud[i].y, cloud[i].z);
+      point = cluster.principal_axes*point + translation;
+      group_point.point.x = point.x();
+      group_point.point.y = point.y();
+      group_point.point.z = point.z();
+      group_point.point.intensity = 0;
+      edges.push_back(group_point);
+    }
+  };
+
+  if(params_.rectangle_fix_point_groups) {
+    cloud_to_edge_group(*cloud1, cluster.edge_group1, 0);
+    cloud_to_edge_group(*cloud2, cluster.edge_group2, 85);
+    cloud_to_edge_group(*cloud3, cluster.edge_group3, 170);
+    cloud_to_edge_group(*cloud4, cluster.edge_group4, 255);
+  }
+
+
   sensor_msgs::msg::PointCloud2 transformed_edge_pc_msg;
   pcl::toROSMsg(*transformed_edge_pc, transformed_edge_pc_msg);
   transformed_edge_pc_msg.header = point_cloud_header_;
-  transformed_edge_pc_msg.header.frame_id = pub_frame_;
+  transformed_edge_pc_msg.header.frame_id = lidar_frame_;
   transformed_edge_pc_pub_->publish(transformed_edge_pc_msg);
 
   std::vector<Eigen::VectorXf> intersection_list{
@@ -2526,8 +2596,9 @@ bool LidarTag::transformSplitEdges(ClusterFamily_t & cluster)
     transformed_pc_tag->push_back(showpoint_tag);
   }
 
-  LidarTag::publishPointcloud(transformed_pc, pub_frame_, string("transpts"));
-  LidarTag::publishPointcloud(transformed_pc_tag, pub_frame_, string("transptstag"));
+  cluster.initial_corners = *transformed_pc_tag;
+  LidarTag::publishPointcloud(transformed_pc, lidar_frame_, string("transpts"));
+  LidarTag::publishPointcloud(transformed_pc_tag, lidar_frame_, string("transptstag"));
 
   // save initial lidar to tag pose matrix
   cluster.initial_pose.rotation = R;
@@ -2796,7 +2867,7 @@ void LidarTag::assignLine(
   const PointXYZRI point1, const PointXYZRI point2, const int count)
 {
 
-  marker.header.frame_id = pub_frame_;
+  marker.header.frame_id = lidar_frame_;
   marker.header.stamp = current_scan_time_;
   // marker.ns = string("Boundary_") + to_string(cluster.cluster_id);
   marker.ns = ns;
@@ -3287,7 +3358,7 @@ void LidarTag::publishLidartagCluster(const vector<ClusterFamily_t> & cluster_bu
     output_ep_pc->points.resize(cluster_ep_pc->points.size());
     output_tr_ep_pc->points.resize(cluster_tr_ep_pc->points.size());
     point.header.stamp = clock_->now();
-    point.header.frame_id = pub_frame_;
+    point.header.frame_id = lidar_frame_;
     point.point.x = cluster_buff[index_num].average.x;
     point.point.y = cluster_buff[index_num].average.y;
     point.point.z = cluster_buff[index_num].average.z;
@@ -3317,9 +3388,9 @@ void LidarTag::publishLidartagCluster(const vector<ClusterFamily_t> & cluster_bu
     pcl::toROSMsg(*output_pc, output_data_msg);
     pcl::toROSMsg(*output_ep_pc, output_ep_msg);
     pcl::toROSMsg(*output_tr_ep_pc, output_tr_ep_msg);
-    output_data_msg.header.frame_id = pub_frame_;
-    output_ep_msg.header.frame_id = pub_frame_;
-    output_tr_ep_msg.header.frame_id = pub_frame_;
+    output_data_msg.header.frame_id = lidar_frame_;
+    output_ep_msg.header.frame_id = lidar_frame_;
+    output_tr_ep_msg.header.frame_id = lidar_frame_;
     output_data_msg.header = point_cloud_header_;
     output_ep_msg.header = point_cloud_header_;
     output_tr_ep_msg.header = point_cloud_header_;
@@ -3345,7 +3416,7 @@ void LidarTag::publishIntersections(const std::vector<Eigen::VectorXf> intersect
   int index = 0;
 
   for (auto intersection : intersection_list) {
-    intersection_marker_array.markers[index].header.frame_id = pub_frame_;
+    intersection_marker_array.markers[index].header.frame_id = lidar_frame_;
     intersection_marker_array.markers[index].header.stamp = clock_->now();
     intersection_marker_array.markers[index].ns = "intersection_marker";
     intersection_marker_array.markers[index].id = index;
@@ -3426,7 +3497,7 @@ void LidarTag::addOrderedPointcloudMarkers(std::vector<std::vector<LidarPoints_t
 
       visualization_msgs::msg::Marker marker;
 
-      marker.header.frame_id = pub_frame_;
+      marker.header.frame_id = lidar_frame_;
       marker.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
       marker.action = visualization_msgs::msg::Marker::ADD;
       marker.lifetime = rclcpp::Duration::from_seconds(sleep_time_for_vis_ * 10);

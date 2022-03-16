@@ -52,22 +52,27 @@ public:
   void setFilterByCoefficients(bool enable);
   void setMaxIterations(int iterations);
   void setInlierError(double error);
+  void setFixPointGroups(bool enabe);
 
   void preparePointsMatrix();
   double getModelErrorAndInliers(Eigen::Vector2d & n, Eigen::Vector4d & c, int & inliers,
     std::vector<Eigen::Vector2d> & inliers1, std::vector<Eigen::Vector2d> & inliers2,
     std::vector<Eigen::Vector2d> & inliers3, std::vector<Eigen::Vector2d> & inliers4,
+    Eigen::VectorXd & errors1, Eigen::VectorXd & errors2,
+    Eigen::VectorXd & errors3, Eigen::VectorXd & errors4,
     bool add_inliers);
 
 protected:
 
   bool checkCoefficients() const;
-
+  void fixPointGroups(Eigen::VectorXd & errors1, Eigen::VectorXd & errors2,
+    Eigen::VectorXd & errors3, Eigen::VectorXd & errors4);
 
   bool use_ransac_;
   bool filter_by_coefficients_;
   int max_ransac_iterations_;
   double max_error_;
+  bool fix_point_groups_;
 
   Eigen::MatrixXd augmented_matrix_;
   Eigen::MatrixXd points_matrix_;
@@ -78,6 +83,8 @@ protected:
   pcl::PointCloud<pcl::PointXYZ>::Ptr points2_;
   pcl::PointCloud<pcl::PointXYZ>::Ptr points3_;
   pcl::PointCloud<pcl::PointXYZ>::Ptr points4_;
+
+  pcl::PointCloud<pcl::PointXYZ> points;
 
 };
 

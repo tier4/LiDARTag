@@ -108,11 +108,13 @@ private:
     int cluster_max_points_size;
     int cluster_min_points_size;
     double depth_bound; // Edge detection parameters
+    double min_rkhs_score;
     bool optional_fix_cluster;
     bool use_rectangle_model;
     bool rectangle_model_use_ransac;
     int rectangle_model_max_iterations;
     float rectangle_model_max_error;
+    bool rectangle_fix_point_groups;
     bool refine_cluster_with_intersections;
     bool debug_single_pointcloud;
     double debug_point_x;
@@ -174,6 +176,7 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr edge3_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr edge4_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr boundary_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr initial_corners_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr cluster_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr payload_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr payload3d_pub_;
@@ -220,7 +223,7 @@ private:
 
   // LiDAR parameters
   rclcpp::Time current_scan_time_; // store current time of the lidar scan
-  std::string pub_frame_;        // publish under what frame?
+  std::string lidar_frame_;        // publish under what frame?
   // Overall LiDAR system parameters
   LiDARSystem_t lidar_system_;
   int beam_num_;
@@ -733,7 +736,8 @@ private:
     pcl::PointCloud<PointXYZRI>::Ptr t_edge3,
     pcl::PointCloud<PointXYZRI>::Ptr t_edge4,
     pcl::PointCloud<PointXYZRI>::Ptr t_boundary_pts,
-  visualization_msgs::msg::MarkerArray & t_marker_array);
+    pcl::PointCloud<PointXYZRI>::Ptr t_initial_corners_pts,
+    visualization_msgs::msg::MarkerArray & t_marker_array);
 
   void plotIdealFrame();
 
@@ -827,11 +831,8 @@ private:
   void displayClusterPointSize(const std::vector<ClusterFamily_t> & cluster_buff);
   void displayClusterIndexNumber(const std::vector<ClusterFamily_t> & cluster_buff);
 
-  // DEBUG Kenzo
   void addOrderedPointcloudMarkers(std::vector<std::vector<LidarPoints_t>> & ordered_buff);
   visualization_msgs::msg::MarkerArray ordered_pointcloud_markers_;
-  int debug_current_ring = -1;
-  int debug_current_scan = -1;
 
   void fixClusters(
     const std::vector<std::vector<LidarPoints_t>> & edge_buff,

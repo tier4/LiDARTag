@@ -115,8 +115,6 @@ void LidarTag::clusterClassifier(
     //cout << "cluster_buff size: " << cluster_buff.size() << endl;
     for (int i = 0; i < cluster_buff.size(); ++i) {
 
-      assert(debug_current_scan == point.index);
-
       /*if (cluster_buff[i].cluster_id == params_.debug_cluster_id &&
         point.index == params_.debug_scan_id &&
         debug_current_ring == params_.debug_ring_id)

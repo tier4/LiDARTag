@@ -34,7 +34,6 @@
 
   <!-- Common parameters to be set externally -->
   <arg name="pointcloud_topic" default="/pointcloud_raw" />
-  <arg name="lidar_frame" />
 
   <arg name="tag_size_list" />
 
@@ -85,7 +84,6 @@
 
 
       <!--  LiDAR System  -->
-      <param name="frame_name" value="$(var lidar_frame)" />
       <param name="pointcloud_topic" value="$(var pointcloud_topic)" />
       <param name="beam_number" value="40" />
       <param name="vertical_fov" value="40.0" />
@@ -110,6 +108,7 @@
       <!-- Decode Method -->
       <param name="decode_method" value="2" />
       <param name="decode_mode" value="5" />
+      <param name="min_rkhs_score" value="11.0" /> <!--default is 12.0 -->
 
 
       <!--  visulization  -->
@@ -194,9 +193,9 @@
       <param name="debug_point_y" value="-11.972125053405762" />
       <param name="debug_point_z" value="-5.0" />
 
-      <param name="debug_cluster_id" value="68" />
-      <param name="debug_ring_id" value="10" />
-      <param name="debug_scan_id" value="632" />
+      <param name="debug_cluster_id" value="-1" />
+      <param name="debug_ring_id" value="-1" />
+      <param name="debug_scan_id" value="-1" />
 
       <param name="pcl_visualize_cluster" value="$(var pcl_visualize_cluster)" />
       <param name="clearance" value="$(var clearance)" />
@@ -204,9 +203,10 @@
 
       <param name="use_rectangle_model" value="true" />
       <param name="rectangle_model_use_ransac" value="true" />
-      <param name="rectangle_model_max_iterations" value="20" />
-      <param name="rectangle_model_max_error" value="0.02" />
-      <param name="refine_cluster_with_intersections" value="false" />
+      <param name="rectangle_model_max_iterations" value="50" />
+      <param name="rectangle_model_max_error" value="0.03" />
+      <param name="rectangle_fix_point_groups" value="true" />
+      <param name="refine_cluster_with_intersections" value="true" /> <!--have not checked its effect on the fine points of calibration -->
 
     </node>
 
