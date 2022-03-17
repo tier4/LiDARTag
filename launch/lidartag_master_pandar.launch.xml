@@ -73,14 +73,14 @@
       <param name="decode_id" value="true" />
       <param name="collect_data" value="0" />
       <param name="num_threads" value="12" />
-      <param name="print_info" value="true" />
+      <param name="print_info" value="false" />
 
 
       <!--  Debugging Mode  -->
-      <param name="debug_info" value="true" />
-      <param name="debug_time" value="true" />
+      <param name="debug_info" value="false" />
+      <param name="debug_time" value="false" />
       <param name="debug_decoding_time" value="false" />
-      <param name="log_data" value="true" />
+      <param name="log_data" value="false" />
 
 
       <!--  LiDAR System  -->
