@@ -44,7 +44,7 @@
 
     <!-- Tunable for PoI clustering -->
     <arg name="nearby_factor" value="4.0" />
-    <arg name="linkage_tunable" value="0.2" />
+    <arg name="linkage_tunable" value="0.25" />
     <!-- SQRT2 / 4 ==  0.35355339059-->
     <arg name="clearance" value="0.35355339059" />
 

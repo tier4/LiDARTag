@@ -779,6 +779,16 @@ void LidarTag::colorClusters(const std::vector<ClusterFamily_t> & clusters)
         colored_point.b = b;
         colored_cluster_buff->points.push_back(colored_point);
       }
+
+      for (int i = 0; i < cluster.edge_points.size(); ++i) {
+        colored_point.x = cluster.edge_points[i].point.x;
+        colored_point.y = cluster.edge_points[i].point.y;
+        colored_point.z = cluster.edge_points[i].point.z;
+        colored_point.r = r;
+        colored_point.g = g;
+        colored_point.b = b;
+        colored_cluster_buff->points.push_back(colored_point);
+      }
     }
   }
 
@@ -818,7 +828,7 @@ void LidarTag::displayClusterPointSize(const std::vector<ClusterFamily_t> & clus
     if (points_size > 50) {
       marker.header.stamp = clock_->now();
       marker.id = cluster_buff[i].cluster_id;
-      marker.text = to_string(points_size);
+      marker.text = to_string(marker.id) + "/" + to_string(points_size);
       marker.ns = "ps_marker_" + to_string(cluster_buff[i].cluster_id);
       marker.pose.position.x = cluster_buff[i].average.x;
       marker.pose.position.y = cluster_buff[i].average.y;
