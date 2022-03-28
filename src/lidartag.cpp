@@ -239,6 +239,8 @@ rcl_interfaces::msg::SetParametersResult LidarTag::paramCallback(
     UPDATE_LIDARTAG_PARAM(params, rectangle_model_max_error);
     UPDATE_LIDARTAG_PARAM(params, rectangle_fix_point_groups);
     UPDATE_LIDARTAG_PARAM(params, refine_cluster_with_intersections);
+    UPDATE_LIDARTAG_PARAM(params, use_intensity_channel);
+    UPDATE_LIDARTAG_PARAM(params, use_borders_as_corners);
     UPDATE_LIDARTAG_PARAM(params, debug_single_pointcloud);
     UPDATE_LIDARTAG_PARAM(params, debug_point_x);
     UPDATE_LIDARTAG_PARAM(params, debug_point_y);
@@ -452,8 +454,6 @@ void LidarTag::mainLoop()
  */
 void LidarTag::getParameters() {
 
-  std::string tag_size_string;
-
   this->declare_parameter<double>("distance_threshold");
   this->declare_parameter<int>("sleep_to_display");
   this->declare_parameter<double>("sleep_time_for_visulization");
@@ -503,7 +503,7 @@ void LidarTag::getParameters() {
   this->declare_parameter<double>("nearby_factor");
   this->declare_parameter<int>("number_points_ring");
   this->declare_parameter<double>("linkage_tunable");
-  this->declare_parameter<std::string>("tag_size_list");
+  this->declare_parameter("tag_size_list");
   this->declare_parameter<bool>("euler_derivative");
   this->declare_parameter<int>("num_threads");
   this->declare_parameter<bool>("print_info");
@@ -539,6 +539,8 @@ void LidarTag::getParameters() {
   this->declare_parameter<double>("rectangle_model_max_error");
   this->declare_parameter<bool>("rectangle_fix_point_groups");
   this->declare_parameter<bool>("refine_cluster_with_intersections");
+  this->declare_parameter<bool>("use_intensity_channel");
+  this->declare_parameter<bool>("use_borders_as_corners");
   this->declare_parameter<double>("min_rkhs_score");
 
   bool GotThreshold = this->get_parameter("distance_threshold", distance_threshold_);
@@ -594,7 +596,7 @@ void LidarTag::getParameters() {
   bool GotNearBound = this->get_parameter("nearby_factor", params_.nearby_factor);
   bool GotNumPointsRing = this->get_parameter("number_points_ring", params_.np_ring);
   bool GotCoefficient = this->get_parameter("linkage_tunable", params_.linkage_tunable);
-  bool GotTagSizeList = this->get_parameter("tag_size_list", tag_size_string);
+  bool GotTagSizeList = this->get_parameter<std::vector<double>>("tag_size_list", tag_size_list_);
   bool GotDerivativeMethod = this->get_parameter("euler_derivative", derivative_method_);
   bool GotNumThreads = this->get_parameter("num_threads", num_threads_);
   bool GotPrintInfo = this->get_parameter("print_info", print_ros_info_);
@@ -645,10 +647,12 @@ void LidarTag::getParameters() {
     params_.rectangle_model_max_error);
   bool GotRectangleFixPointGroups = this->get_parameter("rectangle_fix_point_groups",
     params_.rectangle_fix_point_groups);
-
-
   bool GotRefineClusterWithInteractions = this->get_parameter("refine_cluster_with_intersections",
     params_.refine_cluster_with_intersections);
+  bool GotUseIntensityChannel = this->get_parameter("use_intensity_channel",
+    params_.use_intensity_channel);
+  bool GotUseBordersAsCorners = this->get_parameter("use_borders_as_corners",
+    params_.use_borders_as_corners);
   bool GotMinRKHSScore = this->get_parameter("min_rkhs_score", params_.min_rkhs_score);
 
   rectangle_estimator_ = std::make_shared<RectangleEstimator>();
@@ -657,9 +661,6 @@ void LidarTag::getParameters() {
   rectangle_estimator_->setFixPointGroups(params_.rectangle_fix_point_groups);
   rectangle_estimator_->setMaxIterations(params_.rectangle_model_max_iterations);
   rectangle_estimator_->setRANSAC(params_.rectangle_model_use_ransac);
-
-  std::istringstream is(tag_size_string);
-  tag_size_list_.assign( std::istream_iterator<double>( is ), std::istream_iterator<double>() );
 
   bool pass = utils::checkParameters(
     {GotFakeTag, GotMaxQueueSize, GotBeamNum, GotOptPose, GotDecodeId, GotPlaneFitting,
@@ -678,7 +679,8 @@ void LidarTag::getParameters() {
     GotDebugPointY, GotDebugPointZ, GotDebugClusterId, GotDebugRingId, GotDebugScanId,
     GotVisualizeCluster, GotClearance, GotOptionalFixCluster, GotUSeRectangleModel,
     GotRectangleModelUseRansac, GotRectangleModelMaxIterations, GotRectangleMaxError,
-    GotRefineClusterWithInteractions, GotMinRKHSScore});
+    GotRefineClusterWithInteractions, GotUseIntensityChannel, GotUseBordersAsCorners,
+    GotMinRKHSScore});
 
   if (!pass) {
     rclcpp::shutdown();
@@ -740,6 +742,13 @@ std::vector<std::vector<LidarPoints_t>> LidarTag::getOrderBuff()
   // Convert to sensor_msg to pcl type
   pcl::PointCloud<PointXYZRI>::Ptr pcl_pointcloud(new pcl::PointCloud<PointXYZRI>);
   pcl::fromROSMsg(*msg, *pcl_pointcloud);
+
+  // Debug force not use intensity
+  if (!params_.use_intensity_channel) {
+    for(auto & point : pcl_pointcloud->points) {
+      point.intensity = 0;
+    }
+  }
 
   if (!has_ring_ && !ring_estimated_) {
     std::vector<float> angles;
@@ -1260,27 +1269,32 @@ void LidarTag::gradientAndGroupEdges(
   // TODO: if suddently partial excluded, it will cause errors
   for (int i = beam_num_ - 1; i >= 0; --i) {
     int size = ordered_buff[i].size();
-    for (int j = 1; j < size - n; j++) {
+    for (int j = 0; j < size; j++) {
       // edge_flag:
       // 0 means no edge point,
       // 1 means the left side point is the edge point,
       // 2 means the right side point is the edge point,
       // 3 means two side points are edge points
-      int edge_flag = LidarTag::getEdgePoints(ordered_buff, i, j, n);
+      // 4 forced corner
+      int edge_flag = 0;
 
-      /* debug_current_ring = i;
-      debug_current_scan = j;
+      if (params_.use_borders_as_corners && (j == 0 || j == size - 1)) {
+        edge_flag = 4;
+      } else if (j < size - n) {
+        edge_flag = LidarTag::getEdgePoints(ordered_buff, i, j, n);
+      }
 
       if (j == params_.debug_scan_id &&
         i == params_.debug_ring_id)
       {
         int x = 0;
-      } */
+      }
 
       if (edge_flag == 0) {
         continue;
       }
 
+      // KL: we do not want duplicates
       if (edge_flag == 1 || edge_flag == 3) {
         clusterClassifier(ordered_buff[i][j], cluster_buff);
         const auto & point1 = ordered_buff[i][j].point;
@@ -1295,8 +1309,7 @@ void LidarTag::gradientAndGroupEdges(
                                       DepthGrad1, 0};
         edge_buff[i].push_back(lidar_points);
       }
-
-      if (edge_flag == 2 || edge_flag == 3) {
+      else if (edge_flag == 2 || edge_flag == 3) {
         clusterClassifier(ordered_buff[i][j + n - 1], cluster_buff);
         const auto & point2 = ordered_buff[i][j + n - 1].point;
         const auto & Point2L = ordered_buff[i][j + n - 2].point;
@@ -1307,7 +1320,19 @@ void LidarTag::gradientAndGroupEdges(
         // push the detected point that is an edge into a buff
         LidarPoints_t lidar_points = {ordered_buff[i][j + n - 1].point,
                                       ordered_buff[i][j + n - 1].index, 1, DepthGrad2, 0};
+
+        // When n=1 and flag=3 the edges are duplicated
+        if (edge_flag != 3 || n != 1) {
+          edge_buff[i].push_back(lidar_points);
+        }
+      }
+      else if (edge_flag == 4) {
+        clusterClassifier(ordered_buff[i][j], cluster_buff);
+        double DepthGrad2 = 10.0;
+        LidarPoints_t lidar_points = {ordered_buff[i][j].point,
+                                      ordered_buff[i][j].index, 1, DepthGrad2, 0};
         edge_buff[i].push_back(lidar_points);
+
       }
     }
   }
@@ -1439,6 +1464,11 @@ void LidarTag::fillInCluster(
   result_statistics_.original_cluster_size = cluster_buff.size();
   result_statistics_.remaining_cluster_size = cluster_buff.size();
 
+  int ring_average = 0;
+  for (int j = 0; j < beam_num_; ++j) {
+    ring_average = std::max(ring_average, lidar_system_.ring_average_table[j].average);
+  }
+
   // tbb::parallel_for(int(0), (int)cluster_buff.size(), [&](int i) {
   for (int i = 0; i < cluster_buff.size(); ++i) {
     ClusterFamily_t & cluster = cluster_buff[i];
@@ -1452,11 +1482,11 @@ void LidarTag::fillInCluster(
       int max_index = cluster.max_min_index_of_each_ring[j].max;
       int min_index = cluster.max_min_index_of_each_ring[j].min;
 
-      /*if (cluster.cluster_id == params_.debug_cluster_id &&
+      if (cluster.cluster_id == params_.debug_cluster_id &&
         j == params_.debug_ring_id)
       {
         int x = 0;
-      } */
+      }
 
       // no points on this ring
       if ((std::abs(min_index - 1e5) < 1e-5) || std::abs(max_index + 1) < 1e-5) {
@@ -1468,7 +1498,7 @@ void LidarTag::fillInCluster(
       // that means the special case happened
       // The special case is when first point of a ring is in this cluster
       // so the indices are not consecutive
-      double fill_in_gap = lidar_system_.ring_average_table[j].average / 2;
+      double fill_in_gap = ring_average / 2;
       // cout << "(i, j) = (" << i << ", " << j << ")" << endl;
       // cout << "fill_in_gap: " << fill_in_gap << endl;
       // cout << "max index: " << max_index << endl;
@@ -1662,7 +1692,7 @@ bool LidarTag::adaptiveThresholding(ClusterFamily_t & cluster)
     timing_.timing = std::chrono::steady_clock::now();
   }
 
-  if (!LidarTag::detectPayloadBoundries(cluster)) {
+  if (params_.use_intensity_channel && !LidarTag::detectPayloadBoundries(cluster)) {
     // removal has been done inside the function
     if (debug_time_) {
       timing_.line_fitting_time +=
@@ -2394,6 +2424,10 @@ bool LidarTag::estimateCornersUsingRectangleFitting(ClusterFamily_t & cluster,
  */
 bool LidarTag::transformSplitEdges(ClusterFamily_t & cluster)
 {
+  if (cluster.cluster_id == params_.debug_cluster_id) {
+    int x = 0;
+  }
+
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud3(new pcl::PointCloud<pcl::PointXYZ>);
@@ -2482,7 +2516,7 @@ bool LidarTag::transformSplitEdges(ClusterFamily_t & cluster)
       "Actual Points: " << cluster.data.size() + cluster.edge_points.size());
   }
 
-  int num_edge_points = 3;
+  int num_edge_points = 2;
 
   if (
     cloud1->size() < num_edge_points || cloud2->size() < num_edge_points ||

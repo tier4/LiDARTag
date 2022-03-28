@@ -116,6 +116,8 @@ private:
     float rectangle_model_max_error;
     bool rectangle_fix_point_groups;
     bool refine_cluster_with_intersections;
+    bool use_intensity_channel;
+    bool use_borders_as_corners;
     bool debug_single_pointcloud;
     double debug_point_x;
     double debug_point_y;

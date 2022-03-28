@@ -117,10 +117,10 @@ void LidarTag::clusterClassifier(
 
       /*if (cluster_buff[i].cluster_id == params_.debug_cluster_id &&
         point.index == params_.debug_scan_id &&
-        debug_current_ring == params_.debug_ring_id)
+        point.point.ring == params_.debug_ring_id)
       {
         int x = 0;
-      } */
+      }*/
 
       updateCluster(point, cluster_buff[i], new_cluster);
 
@@ -132,10 +132,18 @@ void LidarTag::clusterClassifier(
 
     // Add a new cluster
     if (new_cluster->flag) {
+
       //cout << "new cluster added" << endl;
       int new_cluster_id = cluster_buff.size();
       int top_ring = point.point.ring;
       int bottom_ring = point.point.ring;
+
+      /*if (new_cluster_id == params_.debug_cluster_id &&
+        point.index == params_.debug_scan_id &&
+        point.point.ring == params_.debug_ring_id)
+      {
+        int x = 0;
+      }*/
 
       PointXYZRI top_most_point = point.point;
       top_most_point.z += params_.linkage_threshold;
