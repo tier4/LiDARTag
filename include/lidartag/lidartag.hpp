@@ -763,7 +763,8 @@ private:
 
             // [A function to put clusterFamily to LidarTagDetectionArray]
   void detectionArrayPublisher(
-    const ClusterFamily_t & cluster, lidartag_msgs::msg::LidarTagDetectionArray & detections_array);
+    const ClusterFamily_t & cluster,
+    lidartag_msgs::msg::LidarTagDetectionArray & detections_array);
 
   /* [Drawing]
    * A function to draw lines in rviz

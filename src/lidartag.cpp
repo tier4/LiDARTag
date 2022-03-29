@@ -49,6 +49,9 @@
 #include <lidartag/utils.hpp>
 #include <lidartag/ultra_puck.hpp>
 
+#include <tf2/utils.h>
+#include <tf2_eigen/tf2_eigen.h>
+
 #include <math.h>   /* sqrt, pow(a,b) */
 #include <stdlib.h> /* srand, rand */
 #include <time.h>   /* clock_t, clock, CLOCKS_PER_SEC */
@@ -3257,7 +3260,8 @@ std::vector<int> LidarTag::getValidClusters(const std::vector<ClusterFamily_t> &
 }
 
 void LidarTag::detectionArrayPublisher(
-  const ClusterFamily_t & cluster, lidartag_msgs::msg::LidarTagDetectionArray & detections_array)
+  const ClusterFamily_t & cluster,
+  lidartag_msgs::msg::LidarTagDetectionArray & detections_array)
 {
   lidartag_msgs::msg::LidarTagDetection detection;
   detection.header = point_cloud_header_;
@@ -3269,7 +3273,32 @@ void LidarTag::detectionArrayPublisher(
   for (int i = 0; i < cluster.data.size(); ++i) {
     clusterPC->push_back(cluster.data[i].point);
   }
-  // std::cout << "LidarTag cluster size" << cluster.data.size() << std::endl;
+
+  Eigen::Matrix4d homogeneus = cluster.pose.homogeneous.cast<double>();
+  Eigen::Isometry3d isometry;
+  isometry.matrix() = homogeneus;
+  detection.pose = tf2::toMsg(isometry);
+
+ // Tag in tag coordinates (counter clock-wise)
+  std::vector<Eigen::Vector2f> vertex = {
+    Eigen::Vector2f{-0.75f, -0.75f}, Eigen::Vector2f{0.75f, -0.75f},
+    Eigen::Vector2f{0.75f, 0.75f}, Eigen::Vector2f{-0.75f, 0.75f}};
+
+  detection.vertices.resize(4);
+
+  // Calculate the tag's boundary corners based on the detection's pose and geometry
+  for (int i = 0; i < 4; ++i) {
+    const Eigen::Vector2f & v = vertex[i];
+    Eigen::Vector4f corner_lidar(
+      0.f, v[0] * cluster.tag_size / 2.f, v[1] * cluster.tag_size / 2.f, 1.f);
+
+    Eigen::Vector4f tag_boundary_corner = cluster.pose.homogeneous * corner_lidar;
+    geometry_msgs::msg::Point & p = detection.vertices[i];
+    p.x = tag_boundary_corner.x();
+    p.y = tag_boundary_corner.y();  //_payload_size
+    p.z = tag_boundary_corner.z();
+  }
+
 
   sensor_msgs::msg::PointCloud2 pcs_waited_to_pub;
   pcl::toROSMsg(*clusterPC, pcs_waited_to_pub);
