@@ -101,7 +101,6 @@ private:
     int num_points_for_plane_feature;
     double nearby_factor;
     int minimum_ring_boundary_points;
-    int np_ring; // Unused
     double linkage_tunable;
     int linkage_ring_max_dist;
     int cluster_max_index;

@@ -227,7 +227,6 @@ rcl_interfaces::msg::SetParametersResult LidarTag::paramCallback(
     UPDATE_LIDARTAG_PARAM(params, num_points_for_plane_feature);
     UPDATE_LIDARTAG_PARAM(params, nearby_factor);
     UPDATE_LIDARTAG_PARAM(params, minimum_ring_boundary_points);
-    UPDATE_LIDARTAG_PARAM(params, np_ring);
     UPDATE_LIDARTAG_PARAM(params, linkage_tunable);
     UPDATE_LIDARTAG_PARAM(params, cluster_max_index);
     UPDATE_LIDARTAG_PARAM(params, cluster_min_index);
@@ -598,7 +597,6 @@ void LidarTag::getParameters() {
   bool GotNumPoints =
     this->get_parameter("num_points_for_plane_feature", params_.num_points_for_plane_feature);
   bool GotNearBound = this->get_parameter("nearby_factor", params_.nearby_factor);
-  bool GotNumPointsRing = this->get_parameter("number_points_ring", params_.np_ring);
   bool GotCoefficient = this->get_parameter("linkage_tunable", params_.linkage_tunable);
   bool GotLinkageRing = this->get_parameter("linkage_ring_max_dist", params_.linkage_ring_max_dist);
 
@@ -676,7 +674,7 @@ void LidarTag::getParameters() {
     GotAdaptiveThresholding, GotCollectData, GotSleepToDisplay, GotSleepTimeForVis,
     GotValgrindCheck, GotPayloadIntensityThreshold, GotBlackBorder, GotMinPerGrid,
     GotDecodeMethod, GotDecodeMode, GotOptimizationMethod, GotGridViz, GotThreshold, GotNumPoints,
-    GotNearBound, GotNumPointsRing, GotCoefficient, GotLinkageRing, GotTagSizeList, GotNumThreads,
+    GotNearBound, GotCoefficient, GotLinkageRing, GotTagSizeList, GotNumThreads,
     GotPrintInfo, GotOptimizePercent, GotDebuginfo, GotDebugtime, GotLogData, GotDebugDecodingtime,
     GotLibraryPath, GotNumCodes, GotCalibration, GotMinimumRingPoints, GotRingState,
     GotRingEstimation, GotNumAccumulation, GotDerivativeMethod, GotUpbound, GotLowbound,

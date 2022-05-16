@@ -48,7 +48,7 @@
     <!-- Tunable for PoI clustering -->
     <arg name="nearby_factor" value="4.0" />
     <arg name="linkage_tunable" value="0.25" />
-    <arg name="linkage_ring_max_dist" value="2" /> <!-- This parameter be 1, but our lidar is missing one channel and this work as a hotfix -->
+    <arg name="linkage_ring_max_dist" value="2" /> <!-- TODO: This parameter be 1, but our lidar is missing one channel and this work as a hotfix -->
     <!-- SQRT2 / 4 ==  0.35355339059-->
     <arg name="clearance" value="0.35355339059" />
     <arg name="optimize_percentage" value="30.0" />
