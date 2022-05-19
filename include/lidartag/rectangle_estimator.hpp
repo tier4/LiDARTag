@@ -15,7 +15,6 @@
 #ifndef RECTANGLE_ESTIMATOR_HPP
 #define RECTANGLE_ESTIMATOR_HPP
 
-//#include <Eigen/Dense> do not include this in lidartag...
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/PCLPointCloud2.h>

@@ -2354,11 +2354,6 @@ bool LidarTag::estimateCornersUsingRectangleFitting(ClusterFamily_t & cluster,
     cloud3->height = 1;
     cloud4->height = 1;
 
-    //pcl::io::savePCDFileASCII ("cloud1.pcd", *cloud1);
-    //pcl::io::savePCDFileASCII ("cloud2.pcd", *cloud2);
-    //pcl::io::savePCDFileASCII ("cloud3.pcd", *cloud3);
-    //pcl::io::savePCDFileASCII ("cloud4.pcd", *cloud4);
-
     return false;
   }
 
