@@ -34,8 +34,8 @@
 
   <!-- Common parameters to be set externally -->
   <arg name="pointcloud_topic" default="/pointcloud_raw" />
-  <arg name="use_intensity_channel" default="true" />
-  <arg name="use_borders_as_corners" default="false" />
+  <arg name="lidartag_detections_topic" default="/lidartag/detection_array" />
+  <arg name="corners_array_topic" default="/lidartag/corners_array" />
   <arg name="beam_number" default="40" />
   <arg name="tag_size_list" />
 

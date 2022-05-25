@@ -14,7 +14,6 @@
 
 #include <lidartag/rectangle_estimator.hpp>
 #include <algorithm>
-// /#include <ranges>
 #include <iostream>
 #include <string>
 #include <random>
@@ -102,7 +101,6 @@ bool RectangleEstimator::estimate_ransac()
   auto sample_points = [&](auto & in_points, auto & out_points)
   {
     out_points->clear();
-    //std::uniform_int_distribution<std::mt19937::result_type> dist(0,in_points->points.size() - 1);
     std::vector<int> index_vector;
     for (int i=0; i < in_points->points.size(); ++i) {
       index_vector.push_back(i);
@@ -111,7 +109,6 @@ bool RectangleEstimator::estimate_ransac()
     std::random_shuffle ( index_vector.begin(), index_vector.end() );
 
     for(int i = 0; i < ransac_min_points; i++) {
-      //int input_index = dist(rng);
       int input_index = index_vector[i];
       out_points->push_back(in_points->points[input_index]);
     }
@@ -141,11 +138,6 @@ bool RectangleEstimator::estimate_ransac()
       inlier_vector, inlier_vector, inlier_vector, inlier_vector,
       errors1, errors2, errors3, errors4, false);
 
-    //std::cout << "Iteration=" << i << " h_Inliers=" << h_inliers << " h_error=" << error << std::endl;
-    //std::cout << "Augmented matrix\n" << augmented_matrix_ << std::endl;
-    //std::cout << "current n\n" << h_n << std::endl;
-    //std::cout << "current c\n" << h_c << std::endl;
-
     if (h_status && (h_inliers > max_inliers || h_inliers == max_inliers && error < min_error)) {
       min_error = error;
       max_inliers = h_inliers;
@@ -160,13 +152,9 @@ bool RectangleEstimator::estimate_ransac()
     }
   }
 
-  //std::cout << "Result Inliers=" << max_inliers << " error=" << min_error << std::endl;
-
-  if (!status){
+  if (!status) {
     return false;
   }
-
-  //std::cout<< "Refining" << std::endl;
 
   int inliers = 0;
   std::vector<Eigen::Vector2d> inliers1, inliers2, inliers3, inliers4;
@@ -191,9 +179,7 @@ bool RectangleEstimator::estimate_ransac()
   eigen_to_pointcloud(inliers3, points3);
   eigen_to_pointcloud(inliers4, points4);
 
-
   status = estimate_imlp(points1, points2, points3, points4, estimated_n, estimated_c);
-
 
   return status;
 }
@@ -241,8 +227,6 @@ bool RectangleEstimator::estimate_imlp(
   lambda(points3->points, 2);
   lambda(points4->points, 3);
 
-  //std::cout << "augmented matrix:\n" << augmented_matrix_ << std::endl;
-
   Eigen::HouseholderQR<Eigen::MatrixXd> qr(augmented_matrix_);
   Eigen::MatrixXd temp = qr.matrixQR().triangularView<Eigen::Upper>();
   Eigen::MatrixXd r_matrix = temp.topRows(augmented_matrix_.cols());
@@ -250,24 +234,15 @@ bool RectangleEstimator::estimate_imlp(
 
   Eigen::JacobiSVD<Eigen::MatrixXd> svd(r_matrix_sub, Eigen::ComputeThinU | Eigen::ComputeThinV);
 
-  //std::cout << "R matrix" << std::endl;
-  //std::cout << "dimensions" << r_matrix.rows() << "x" << r_matrix.cols() << std::endl;
-  //std::cout << r_matrix << std::endl;
-
   Eigen::MatrixXd v = svd.matrixV();
   Eigen::MatrixXd n = v.col(1);
-  //std::cout << "n: \n" << n << "\n dimensions" << n.rows() << "x" << n.cols() << std::endl;
 
   Eigen::MatrixXd aux1 = r_matrix.block(0, 0, 4, 4);
   Eigen::MatrixXd aux2 = r_matrix.block(0, 4, 4, 2);
 
-  //std::cout << "aux1:\n" << aux1 << "\n dimensions" << aux1.rows() << "x" << aux1.cols() << std::endl;
-  //std::cout << "aux2:\n" << aux2 << "\n dimensions" << aux2.rows() << "x" << aux2.cols() << std::endl;
   Eigen::MatrixXd c = -(aux1.inverse()) * (aux2) * n;
-  //std::cout << "c:\n" << c << "\n dimensions" << c.rows() << "x" << c.cols() << std::endl;
 
   Eigen::MatrixXd error1 = aux1 * c + aux2 * n;
-  //std::cout << "error:\n" << error1 << "\n dimensions" << error1.rows() << "x" << error1.cols() << std::endl;
 
   Eigen::VectorXd x;
   x.resize(6);
@@ -275,7 +250,6 @@ bool RectangleEstimator::estimate_imlp(
   x.block(4,0,2,1) = n;
 
   Eigen::VectorXd error2 = augmented_matrix_ * x;
-  //std::cout << "error2:\n" << error2 << "\n dimensions" << error2.rows() << "x" << error2.cols() << std::endl;
 
   c_out = c;
   n_out = n;
@@ -416,11 +390,6 @@ double RectangleEstimator::getModelErrorAndInliers(
   double t3_2 = (corners[2] - p3).dot(d1_paralell);
   double t3_min = std::min(t3_1, t3_2);
   double t3_max = std::max(t3_1, t3_2);
-
-  //Eigen::VectorXd error1(points_matrix_.rows());
-  //Eigen::VectorXd error2(points_matrix_.rows());
-  //Eigen::VectorXd error3(points_matrix_.rows());
-  //Eigen::VectorXd error4(points_matrix_.rows());
 
   errors1.resize(points_matrix_.rows());
   errors2.resize(points_matrix_.rows());
