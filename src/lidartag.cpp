@@ -2517,7 +2517,7 @@ bool LidarTag::transformSplitEdges(ClusterFamily_t & cluster)
       "Actual Points: " << cluster.data.size() + cluster.edge_points.size());
   }
 
-  int num_edge_points = 2;
+  int num_edge_points = 3;
 
   if (
     cloud1->size() < num_edge_points || cloud2->size() < num_edge_points ||

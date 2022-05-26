@@ -135,7 +135,7 @@
       <param name="optimize_percentage" value="$(var optimize_percentage)" /> <!-- 10.0 -->
       <param name="payload_intensity_threshold" value="1.0" />
       <param name="points_threshold_factor" value="1.5" />
-      <param name="distance_to_plane_threshold" value="$(var optimize_percentage)" /> <!--0.05 -->
+      <param name="distance_to_plane_threshold" value="$(var distance_to_plane_threshold)" /> <!--0.05 -->
       <param name="minimum_ring_boundary_points" value="1" />
       <param name="tagsize_tunable" value="0.1" />
       <param name="coa_tunable" value="0.75" />
