@@ -1289,7 +1289,7 @@ void LidarTag::gradientAndGroupEdges(
         edge_flag = LidarTag::getEdgePoints(ordered_buff, i, j, n);
       }
 
-
+      // TODO: delete this when the lidartag development finishes. Is is used to pinpoint the reasons why some pointclouds are not detected
       /*if (j == params_.debug_scan_id &&
         i == params_.debug_ring_id)
       {
@@ -1488,6 +1488,7 @@ void LidarTag::fillInCluster(
       int max_index = cluster.max_min_index_of_each_ring[j].max;
       int min_index = cluster.max_min_index_of_each_ring[j].min;
 
+      // TODO: delete this when the lidartag development finishes. Is is used to pinpoint the reasons why some pointclouds are not detected
       /*if (cluster.cluster_id == params_.debug_cluster_id &&
         j == params_.debug_ring_id)
       {
@@ -2425,6 +2426,7 @@ bool LidarTag::estimateCornersUsingRectangleFitting(ClusterFamily_t & cluster,
  */
 bool LidarTag::transformSplitEdges(ClusterFamily_t & cluster)
 {
+  // TODO: delete this when the lidartag development finishes. Is is used to pinpoint the reasons why some pointclouds are not detected
   /*if (cluster.cluster_id == params_.debug_cluster_id) {
     int x = 0;
   }*/
