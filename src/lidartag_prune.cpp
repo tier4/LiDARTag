@@ -171,6 +171,7 @@ bool LidarTag::rejectWithPlanarCheck(
   ClusterFamily_t & cluster, pcl::PointIndices::Ptr inliers,
   pcl::ModelCoefficients::Ptr coefficients, std::ostream & fplanefit)
 {
+  // TODO: delete this when the lidartag development finishes. Is is used to pinpoint the reasons why some pointclouds are not detected
   /*if (cluster.cluster_id == params_.debug_cluster_id)
   {
     int x = 0;

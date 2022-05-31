@@ -152,7 +152,7 @@ bool RectangleEstimator::estimate_ransac()
     }
   }
 
-  if (!status){
+  if (!status) {
     return false;
   }
 

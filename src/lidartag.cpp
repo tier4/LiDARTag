@@ -659,12 +659,14 @@ void LidarTag::getParameters() {
     params_.use_borders_as_corners);
   bool GotMinRKHSScore = this->get_parameter("min_rkhs_score", params_.min_rkhs_score);
 
+
   rectangle_estimator_ = std::make_shared<RectangleEstimator>();
   rectangle_estimator_->setFilterByCoefficients(false);
   rectangle_estimator_->setInlierError(params_.rectangle_model_max_error);
   rectangle_estimator_->setFixPointGroups(params_.rectangle_fix_point_groups);
   rectangle_estimator_->setMaxIterations(params_.rectangle_model_max_iterations);
   rectangle_estimator_->setRANSAC(params_.rectangle_model_use_ransac);
+
 
   bool pass = utils::checkParameters(
     {GotFakeTag, GotMaxQueueSize, GotBeamNum, GotOptPose, GotDecodeId, GotPlaneFitting,
@@ -1288,11 +1290,12 @@ void LidarTag::gradientAndGroupEdges(
         edge_flag = LidarTag::getEdgePoints(ordered_buff, i, j, n);
       }
 
-      if (j == params_.debug_scan_id &&
+      // TODO: delete this when the lidartag development finishes. Is is used to pinpoint the reasons why some pointclouds are not detected
+      /*if (j == params_.debug_scan_id &&
         i == params_.debug_ring_id)
       {
         int x = 0;
-      }
+      } */
 
       if (edge_flag == 0) {
         continue;
@@ -1486,11 +1489,12 @@ void LidarTag::fillInCluster(
       int max_index = cluster.max_min_index_of_each_ring[j].max;
       int min_index = cluster.max_min_index_of_each_ring[j].min;
 
-      if (cluster.cluster_id == params_.debug_cluster_id &&
+      // TODO: delete this when the lidartag development finishes. Is is used to pinpoint the reasons why some pointclouds are not detected
+      /*if (cluster.cluster_id == params_.debug_cluster_id &&
         j == params_.debug_ring_id)
       {
         int x = 0;
-      }
+      } */
 
       // no points on this ring
       if ((std::abs(min_index - 1e5) < 1e-5) || std::abs(max_index + 1) < 1e-5) {
@@ -2423,9 +2427,10 @@ bool LidarTag::estimateCornersUsingRectangleFitting(ClusterFamily_t & cluster,
  */
 bool LidarTag::transformSplitEdges(ClusterFamily_t & cluster)
 {
-  if (cluster.cluster_id == params_.debug_cluster_id) {
+  // TODO: delete this when the lidartag development finishes. Is is used to pinpoint the reasons why some pointclouds are not detected
+  /*if (cluster.cluster_id == params_.debug_cluster_id) {
     int x = 0;
-  }
+  }*/
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2(new pcl::PointCloud<pcl::PointXYZ>);
@@ -3263,7 +3268,6 @@ void LidarTag::detectionArrayPublisher(
 
   detection.id = cluster.cluster_id;
   detection.size = cluster.tag_size;
-
   pcl::PointCloud<PointXYZRI>::Ptr clusterPC(new pcl::PointCloud<PointXYZRI>);
   for (int i = 0; i < cluster.data.size(); ++i) {
     clusterPC->push_back(cluster.data[i].point);

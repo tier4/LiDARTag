@@ -474,6 +474,9 @@ void LidarTag::clusterToPclVectorAndMarkerPublisher(
       }
     }
 
+    // Add the initial corners obtained through either line or rectangle estimation
+    *initial_corners += cluster.initial_corners;
+
     // corner points and RANSAC line
     if (adaptive_thresholding_) {
       Eigen::Vector4f eigen_point;
