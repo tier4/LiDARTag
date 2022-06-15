@@ -478,7 +478,7 @@ private:
    */
   bool detectPayloadBoundries(ClusterFamily_t & t_cluster);
 
-  /* [Payload extraction] <A cluster>
+  /* [Payload extraction] <A cluster> --> UNUSED
    * A function to extract the payload points from a valid cluster.
    * Let's say we have 10 points on the left boundary (line) of the tag and 9
    * points on the right boundary (line) of the tag. It is separated into two
