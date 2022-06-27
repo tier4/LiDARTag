@@ -75,6 +75,7 @@
 #include <lidartag_msgs/msg/lidar_tag_detection.hpp>
 #include <lidartag_msgs/msg/lidar_tag_detection_array.hpp>
 
+#include <lidartag/decoding/naive_hamming_decoding.hpp>
 #include <lidartag/rectangle_estimator.hpp>
 #include <lidartag/thread_pool.hpp>
 #include <lidartag/types.hpp>
@@ -293,6 +294,9 @@ private:
 
   // Corner estimation
   std::shared_ptr<RectangleEstimator> rectangle_estimator_;
+
+  // Naive decoding
+  std::shared_ptr<NaiveHammingDecoding> hamming_decoding_;
 
   /* [Main loop]
    * main loop of process
@@ -626,7 +630,13 @@ private:
    */
   int getCodeRKHS(RKHSDecoding_t & rkhs_decoding, const double & tag_size);
 
-  Eigen::MatrixXf construct3DShapeMarker(RKHSDecoding_t & rkhs_decoding, const double & ell);
+  /* [Decoder]
+   * 1) Cluster
+   */
+  int getCodeNaiveHamming(ClusterFamily_t & cluster);
+
+  Eigen::MatrixXf construct3DShapeMarker(RKHSDecoding_t & rkhs_decoding, const double & ell,
+    double & white_median, double & black_median);
 
   float computeFunctionInnerProduct(const Eigen::MatrixXf & pc1,
     const Eigen::MatrixXf & pc2,

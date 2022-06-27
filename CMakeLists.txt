@@ -68,7 +68,8 @@ ament_auto_add_executable(lidartag_main
     src/lidartag_rviz.cpp
     src/lidartag_cluster.cpp
     src/lidartag_prune.cpp
-    src/rectangle_estimator.cpp)
+    src/rectangle_estimator.cpp
+    src/decoding/naive_hamming_decoding.cpp)
 
 target_link_libraries(lidartag_main
     ${PCL_LIBRARIES}

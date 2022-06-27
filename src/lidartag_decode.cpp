@@ -535,7 +535,7 @@ int LidarTag::getCodeWeightedGaussian(
 }
 
 Eigen::MatrixXf LidarTag::construct3DShapeMarker(
-  RKHSDecoding_t & rkhs_decoding, const double & ell)
+  RKHSDecoding_t & rkhs_decoding, const double & ell, double & white_median, double & black_median)
 {
   Eigen::VectorXf offset_intensity =
     rkhs_decoding.template_points.row(3) -
@@ -562,6 +562,8 @@ Eigen::MatrixXf LidarTag::construct3DShapeMarker(
   float neg_median = std::abs(utils::computeMedian(neg_vec));
   // cout << "pos:" << pos_median << endl;
   // cout << "neg:" << neg_median << endl;
+  white_median = pos_median;
+  black_median = neg_median;
 
   pos_vec /= pos_median;
   neg_vec /= neg_median;
@@ -1616,7 +1618,9 @@ int LidarTag::getCodeRKHS(RKHSDecoding_t & rkhs_decoding, const double & tag_siz
   int size_num = rkhs_decoding.size_num;
   int num_codes = function_dic_[size_num].size();
   rkhs_decoding.ell = tag_size / (std::sqrt(tag_family_) + 4 * black_border_) / 2;
-  rkhs_decoding.template_points_3d = construct3DShapeMarker(rkhs_decoding, rkhs_decoding.ell);
+  double white_median, black_median;
+  rkhs_decoding.template_points_3d = construct3DShapeMarker(
+    rkhs_decoding, rkhs_decoding.ell, white_median, black_median);
   rkhs_decoding.score = std::vector<float>(num_codes * 4);
   float area = tag_size * tag_size;
   float id_score = -1;
@@ -1686,6 +1690,20 @@ int LidarTag::getCodeRKHS(RKHSDecoding_t & rkhs_decoding, const double & tag_siz
   return status;
 }
 
+// return 0 if sucessfully or -1 if score is too low
+int LidarTag::getCodeNaiveHamming(ClusterFamily_t & cluster)
+{
+  double white_median, black_median;
+  cluster.rkhs_decoding.ell = cluster.tag_size / (std::sqrt(tag_family_) + 4 * black_border_) / 2;
+  cluster.rkhs_decoding.template_points_3d = construct3DShapeMarker(
+    cluster.rkhs_decoding, cluster.rkhs_decoding.ell, white_median, black_median);
+
+  int status = hamming_decoding_->decode(cluster.rkhs_decoding.template_points_3d.cast<double>(), cluster.tag_size, 
+    white_median, black_median, cluster.rkhs_decoding.id, cluster.rkhs_decoding.rotation_angle);
+
+  return status;
+}
+
 /* [Payload decoding]
  * A function to decode payload with different means
  * 0: Naive decoding
@@ -1726,6 +1744,14 @@ bool LidarTag::decodePayload(ClusterFamily_t & cluster)
     if (status == 1) {
       cluster.cluster_id = cluster.rkhs_decoding.id;
     } else {
+      valid_tag = false;
+      cluster.valid = 0;
+      cluster.cluster_id = -1;
+      result_statistics_.cluster_removal.decoding_failure++;
+    }
+  } else if (decode_method_ == 3) {  // NaiveHamming
+    int status = LidarTag::getCodeNaiveHamming(cluster);
+    if (status != 1) {
       valid_tag = false;
       cluster.valid = 0;
       cluster.cluster_id = -1;
