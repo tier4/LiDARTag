@@ -109,7 +109,7 @@ void NaiveHammingDecoding::loadTemplates()
     Eigen::MatrixXd template_matrix;
     cv::cv2eigen(template_img, template_matrix);
 
-    if (template_matrix.cols() != 8 || template_matrix.rows() != 8) {
+    if (template_matrix.cols() != template_matrix.rows()) {
       continue;
     }
 
@@ -121,16 +121,16 @@ void NaiveHammingDecoding::loadTemplates()
       
       Eigen::MatrixXd aux = template_array;
 
-      for(int j = 0; j < 8; j++)
+      for(int j = 0; j < aux.cols(); j++)
       {
-        for(int i = 0; i < 8; i++)
+        for(int i = 0; i < aux.cols(); i++)
         {
           aux(j, i) = template_array(7 - i, j);
         }
       }
 
       template_array = aux;
-      tag_templates[id][orientation] = template_array;
+      tag_templates[id][4 - orientation] = template_array;
     }
   }
 
@@ -161,6 +161,9 @@ Eigen::ArrayXXd NaiveHammingDecoding::computeScoreMatrix(
 
     int i = std::floor(x + 4);
     int j = std::floor(y + 4);
+
+    assert(i >= 0 && i < 8);
+    assert(j >= 0 && j < 8);
 
     double center_x = i + 0.5 - 4;
     double center_y = j + 0.5 - 4;

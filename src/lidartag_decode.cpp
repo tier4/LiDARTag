@@ -535,7 +535,7 @@ int LidarTag::getCodeWeightedGaussian(
 }
 
 Eigen::MatrixXf LidarTag::construct3DShapeMarker(
-  RKHSDecoding_t & rkhs_decoding, const double & ell, double & white_median, double & black_median)
+  RKHSDecoding_t & rkhs_decoding, const double & ell)
 {
   Eigen::VectorXf offset_intensity =
     rkhs_decoding.template_points.row(3) -
@@ -560,10 +560,6 @@ Eigen::MatrixXf LidarTag::construct3DShapeMarker(
   // compute median
   float pos_median = std::abs(utils::computeMedian(pos_vec));
   float neg_median = std::abs(utils::computeMedian(neg_vec));
-  // cout << "pos:" << pos_median << endl;
-  // cout << "neg:" << neg_median << endl;
-  white_median = pos_median;
-  black_median = neg_median;
 
   pos_vec /= pos_median;
   neg_vec /= neg_median;
@@ -1618,9 +1614,8 @@ int LidarTag::getCodeRKHS(RKHSDecoding_t & rkhs_decoding, const double & tag_siz
   int size_num = rkhs_decoding.size_num;
   int num_codes = function_dic_[size_num].size();
   rkhs_decoding.ell = tag_size / (std::sqrt(tag_family_) + 4 * black_border_) / 2;
-  double white_median, black_median;
   rkhs_decoding.template_points_3d = construct3DShapeMarker(
-    rkhs_decoding, rkhs_decoding.ell, white_median, black_median);
+    rkhs_decoding, rkhs_decoding.ell);
   rkhs_decoding.score = std::vector<float>(num_codes * 4);
   float area = tag_size * tag_size;
   float id_score = -1;
@@ -1693,13 +1688,12 @@ int LidarTag::getCodeRKHS(RKHSDecoding_t & rkhs_decoding, const double & tag_siz
 // return 0 if sucessfully or -1 if score is too low
 int LidarTag::getCodeNaiveHamming(ClusterFamily_t & cluster)
 {
-  double white_median, black_median;
   cluster.rkhs_decoding.ell = cluster.tag_size / (std::sqrt(tag_family_) + 4 * black_border_) / 2;
   cluster.rkhs_decoding.template_points_3d = construct3DShapeMarker(
-    cluster.rkhs_decoding, cluster.rkhs_decoding.ell, white_median, black_median);
+    cluster.rkhs_decoding, cluster.rkhs_decoding.ell);
 
   int status = hamming_decoding_->decode(cluster.rkhs_decoding.template_points_3d.cast<double>(), cluster.tag_size, 
-    white_median, black_median, cluster.rkhs_decoding.id, cluster.rkhs_decoding.rotation_angle);
+    cluster.rkhs_decoding.ell, cluster.rkhs_decoding.ell, cluster.rkhs_decoding.id, cluster.rkhs_decoding.rotation_angle);
 
   return status;
 }
@@ -1714,7 +1708,7 @@ int LidarTag::getCodeNaiveHamming(ClusterFamily_t & cluster)
  */
 bool LidarTag::decodePayload(ClusterFamily_t & cluster)
 {
-  int old_id = cluster.cluster_id;
+  //int old_id = cluster.cluster_id;
   string code("");
   bool valid_tag = true;
   string msg;
@@ -1751,7 +1745,10 @@ bool LidarTag::decodePayload(ClusterFamily_t & cluster)
     }
   } else if (decode_method_ == 3) {  // NaiveHamming
     int status = LidarTag::getCodeNaiveHamming(cluster);
-    if (status != 1) {
+    if (status == 1) {
+      cluster.cluster_id = cluster.rkhs_decoding.id;
+    }
+    else {
       valid_tag = false;
       cluster.valid = 0;
       cluster.cluster_id = -1;
@@ -1780,47 +1777,37 @@ bool LidarTag::decodePayload(ClusterFamily_t & cluster)
     }
   }
 
-  // TODO KL here we do our magic point_cloud_header_
-  std::ostringstream ss_folder;
-  std::ostringstream ss_file;
-  ss_folder << "exp_name/" << cluster.cluster_id << "/" << cluster.rkhs_decoding.rotation_angle;
-  ss_file << ss_folder.str() << "/" << point_cloud_header_.stamp.sec << " _" << point_cloud_header_.stamp.nanosec / int(10e6) << "_" << old_id << ".pcd";
-  std::string file_name = ss_file.str();
+  // Data collection logic
+  //std::ostringstream ss_folder;
+  //std::ostringstream ss_file;
+  //ss_folder << "exp_name/" << cluster.cluster_id << "/" << cluster.rkhs_decoding.rotation_angle;
+  //ss_file << ss_folder.str() << "/" << point_cloud_header_.stamp.sec << " _" << point_cloud_header_.stamp.nanosec / int(10e6) << "_" << old_id << ".pcd";
+  //std::string file_name = ss_file.str();
 
-  if (!std::filesystem::exists(ss_folder.str()))
-  {
-    std::filesystem::create_directories(ss_folder.str());
-  }
+  //if (!std::filesystem::exists(ss_folder.str()))
+  //{
+  //  std::filesystem::create_directories(ss_folder.str());
+  //}
 
   //RCLCPP_INFO_STREAM(get_logger(), "rotation: " << cluster.entry.rotation);
-  pcl::PointCloud<PointXYZRI>::Ptr cloud(new pcl::PointCloud<PointXYZRI>);
-  cloud->reserve(cluster.rkhs_decoding.template_points_3d.cols());
+  //pcl::PointCloud<PointXYZRI>::Ptr cloud(new pcl::PointCloud<PointXYZRI>);
+  //cloud->reserve(cluster.rkhs_decoding.template_points_3d.cols());
 
-  for(int col = 0; col < cluster.rkhs_decoding.template_points_3d.cols(); col++){
-    Eigen::VectorXf p_eigen = cluster.rkhs_decoding.template_points_3d.col(col);
-    PointXYZRI p_pcl;
-    p_pcl.x = p_eigen(0);
-    p_pcl.y = p_eigen(1);
-    p_pcl.z = p_eigen(2);
-    p_pcl.intensity = p_eigen(3);
+  //for(int col = 0; col < cluster.rkhs_decoding.template_points_3d.cols(); col++){
+  //  Eigen::VectorXf p_eigen = cluster.rkhs_decoding.template_points_3d.col(col);
+  //  PointXYZRI p_pcl;
+  //  p_pcl.x = p_eigen(0);
+  //  p_pcl.y = p_eigen(1);
+  //  p_pcl.z = p_eigen(2);
+  //  p_pcl.intensity = p_eigen(3);
 
-    cloud->push_back(p_pcl);
-  }
+  //  cloud->push_back(p_pcl);
+  //}
 
-  //RCLCPP_ERROR_STREAM(get_logger(), "Original payload size: " << cluster.payload.size());
-  //RCLCPP_ERROR_STREAM(get_logger(), "Original payload height: " << cluster.payload.height);
-  //RCLCPP_ERROR_STREAM(get_logger(), "Original payload width: " << cluster.payload.width);
-  //RCLCPP_ERROR_STREAM(get_logger(), "Output payload size: " << cloud->size());
-  //RCLCPP_ERROR_STREAM(get_logger(), "Output payload height: " << cloud->height);
-  //RCLCPP_ERROR_STREAM(get_logger(), "Output payload width: " << cloud->width);
+  //RCLCPP_ERROR_STREAM(get_logger(), "template_points rows: " << cluster.rkhs_decoding.template_points_3d.rows());
+  //RCLCPP_ERROR_STREAM(get_logger(), "template_points cols: " << cluster.rkhs_decoding.template_points_3d.cols());
 
-  //RCLCPP_ERROR_STREAM(get_logger(), "Template points: " << std::endl << cluster.rkhs_decoding.template_points_3d);
-  RCLCPP_ERROR_STREAM(get_logger(), "template_points rows: " << cluster.rkhs_decoding.template_points_3d.rows());
-  RCLCPP_ERROR_STREAM(get_logger(), "template_points cols: " << cluster.rkhs_decoding.template_points_3d.cols());
-
-  pcl::io::savePCDFileASCII (file_name, *cloud);
-  //std::cerr << "Saved " << cloud.size () << " data points to test_pcd.pcd." << std::endl;
-
+  //pcl::io::savePCDFileASCII (file_name, *cloud);
 
   return valid_tag;
 }

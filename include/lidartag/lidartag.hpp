@@ -635,8 +635,7 @@ private:
    */
   int getCodeNaiveHamming(ClusterFamily_t & cluster);
 
-  Eigen::MatrixXf construct3DShapeMarker(RKHSDecoding_t & rkhs_decoding, const double & ell,
-    double & white_median, double & black_median);
+  Eigen::MatrixXf construct3DShapeMarker(RKHSDecoding_t & rkhs_decoding, const double & ell);
 
   float computeFunctionInnerProduct(const Eigen::MatrixXf & pc1,
     const Eigen::MatrixXf & pc2,

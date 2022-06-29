@@ -115,7 +115,7 @@
 
 
       <!-- Decode Method -->
-      <param name="decode_method" value="2" />
+      <param name="decode_method" value="3" />
       <param name="decode_mode" value="5" />
       <param name="min_rkhs_score" value="3.0" /> <!--default is 12.0 -->
 
@@ -223,7 +223,7 @@
       <param name="hamming_decoding_min_payload_bits" value="10.0" />
       <param name="hamming_decoding_min_payload_margin" value="2.0" />
       <param name="hamming_decoding_intensity_threshold" value="0.5" />
-      <param name="hamming_decoding_rbf_sigma" value="0.5" />
+      <param name="hamming_decoding_rbf_sigma" value="0.25" />
       <param name="hamming_decoding_decoding_bit_threshold" value="0.6" />
     </node>
 
