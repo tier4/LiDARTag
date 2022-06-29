@@ -19,6 +19,7 @@
 #include <opencv2/imgcodecs.hpp>
 
 #include <algorithm>
+#include <iostream>
 
 NaiveHammingDecoding::NaiveHammingDecoding(
   const std::string & tag_family, const std::string & templates_path, double min_white_border_bits,
@@ -46,14 +47,14 @@ NaiveHammingDecoding::NaiveHammingDecoding(
   white_frame_mask.block(1, 1, 6, 6).setConstant(0.0);
   black_frame_mask.block(1, 1, 6, 6).setConstant(1.0);
   black_frame_mask.block(2, 2, 4, 4).setConstant(0.0);
-  black_frame_mask.block(2, 2, 4, 4).setConstant(1.0);
+  payload_mask.block(2, 2, 4, 4).setConstant(1.0);
 }
 
 bool NaiveHammingDecoding::decode(
   const Eigen::MatrixXd & payload, double tag_size, double white_median, double black_median,
-  int decoded_id, int decoded_orientation)
+  int & decoded_id, int & decoded_orientation)
 {
-  if (initialized_) {
+  if (!initialized_) {
     loadTemplates();
   }
 
@@ -61,7 +62,7 @@ bool NaiveHammingDecoding::decode(
   decoded_orientation = -1;
 
   // Compute
-  Eigen::ArrayXd scores = computeScoreMatrix(payload, tag_size, white_median, black_median);
+  Eigen::ArrayXXd scores = computeScoreMatrix(payload, tag_size, white_median, black_median);
 
   std::vector<std::tuple<double, int, int>> templates_decoded_bits;
   double white_frame_bits;
@@ -72,7 +73,7 @@ bool NaiveHammingDecoding::decode(
   std::sort(
     templates_decoded_bits.begin(), templates_decoded_bits.end(),
     [](const std::tuple<double, int, int> & lhs, const std::tuple<double, int, int> & rhs) -> bool {
-      return std::get<0>(lhs) < std::get<0>(rhs);
+      return std::get<0>(lhs) > std::get<0>(rhs);
     });
 
   double best_score = std::get<0>(templates_decoded_bits[0]);
@@ -117,8 +118,19 @@ void NaiveHammingDecoding::loadTemplates()
     tag_templates[id][0] = template_array;
 
     for (int orientation = 1; orientation < 4; orientation++) {
-      template_array = template_array.transpose().colwise().reverse();
-      tag_templates[id][4 - orientation] = template_array;
+      
+      Eigen::MatrixXd aux = template_array;
+
+      for(int j = 0; j < 8; j++)
+      {
+        for(int i = 0; i < 8; i++)
+        {
+          aux(j, i) = template_array(7 - i, j);
+        }
+      }
+
+      template_array = aux;
+      tag_templates[id][orientation] = template_array;
     }
   }
 
@@ -127,11 +139,11 @@ void NaiveHammingDecoding::loadTemplates()
   }
 }
 
-Eigen::ArrayXd NaiveHammingDecoding::computeScoreMatrix(
+Eigen::ArrayXXd NaiveHammingDecoding::computeScoreMatrix(
   const Eigen::MatrixXd & payload, double tag_size, double white_median, double black_median)
 {
-  Eigen::ArrayXd scores = Eigen::ArrayXd::Zero(8, 8);
-  Eigen::ArrayXd scores_aux = Eigen::ArrayXd::Zero(8, 8);
+  Eigen::ArrayXXd scores = Eigen::ArrayXXd::Zero(8, 8);
+  Eigen::ArrayXXd scores_aux = Eigen::ArrayXXd::Zero(8, 8);
   scores_aux.setConstant(1e-5);
 
   double median = std::min(black_median, white_median);
@@ -139,9 +151,9 @@ Eigen::ArrayXd NaiveHammingDecoding::computeScoreMatrix(
 
   for (int col = 0; col < payload.cols(); col++) {
     Eigen::VectorXd p = payload.col(col);
-    double x = p(0) / cell_size;
-    double y = -p(1) / cell_size;
-    double intensity = p(2);
+    double x = p(1) / cell_size;
+    double y = -p(2) / cell_size;
+    double intensity = p(0);
 
     if ((std::abs(x) >= 4) || (std::abs(y) >= 4)) {
       continue;
@@ -168,18 +180,16 @@ Eigen::ArrayXd NaiveHammingDecoding::computeScoreMatrix(
 }
 
 void NaiveHammingDecoding::computeMatchScores(
-  const Eigen::ArrayXd & scores, std::vector<std::tuple<double, int, int>> & decoding_output,
+  const Eigen::ArrayXXd & scores, std::vector<std::tuple<double, int, int>> & decoding_output,
   double & white_frame_bits, double & black_frame_bits)
 {
-  Eigen::ArrayXd decoded_mask; 
-  assert(false);
-  //Eigen::ArrayXd decoded_mask = scores.abs() > decoding_bit_threshold_;
-  const Eigen::ArrayXd & decoded = scores;
+  Eigen::ArrayXXd decoded_mask = (scores.abs() > decoding_bit_threshold_).cast<double>();
+  const Eigen::ArrayXXd & decoded = scores;
 
-  Eigen::ArrayXd decoded_white_frame_array = (decoded * decoded_mask * white_frame_mask);
-  Eigen::ArrayXd decoded_black_frame_array = -(decoded * decoded_mask * black_frame_mask);
+  Eigen::ArrayXXd decoded_white_frame_array = (decoded * decoded_mask * white_frame_mask);
+  Eigen::ArrayXXd decoded_black_frame_array = -(decoded * decoded_mask * black_frame_mask);
 
-  auto extract_bits_from_array = [](const Eigen::ArrayXd & array) -> double {
+  auto extract_bits_from_array = [](const Eigen::ArrayXXd & array) -> double {
     double bits = 0.0;
     for (int j = 0; j < array.rows(); j++) {
       for (int i = 0; i < array.cols(); i++) {
@@ -190,15 +200,19 @@ void NaiveHammingDecoding::computeMatchScores(
     return bits;
   };
 
+  int max_white_bits = extract_bits_from_array(white_frame_mask);
+  int max_back_bits = extract_bits_from_array(black_frame_mask);
+  int max_bits = extract_bits_from_array(decoded_mask);
+  
   white_frame_bits = extract_bits_from_array(decoded_white_frame_array);
   black_frame_bits = extract_bits_from_array(decoded_black_frame_array);
 
   for (auto & it : tag_templates) {
     int id = it.first;
-    const std::array<Eigen::ArrayXd, 4> id_templates = it.second;
+    const std::array<Eigen::ArrayXXd, 4> id_templates = it.second;
 
     for (int direction = 0; direction < id_templates.size(); direction++) {
-      Eigen::ArrayXd aux = (decoded * payload_mask * decoded_mask * id_templates[direction]);
+      Eigen::ArrayXXd aux = (decoded * payload_mask * decoded_mask * id_templates[direction]);
       double decoded_bits = extract_bits_from_array(aux);
 
       decoding_output.emplace_back(decoded_bits, id, direction);

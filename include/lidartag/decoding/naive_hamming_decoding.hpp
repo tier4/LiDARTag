@@ -34,20 +34,20 @@ public:
 
   bool decode(
     const Eigen::MatrixXd & payload, double tag_size, double white_median, double black_median,
-    int decoded_id, int decoded_orientation);
+    int & decoded_id, int & decoded_orientation);
 
 protected:
   void loadTemplates();
-  Eigen::ArrayXd computeScoreMatrix(
+  Eigen::ArrayXXd computeScoreMatrix(
     const Eigen::MatrixXd & payload, double tag_size, double white_median, double black_median);
   void computeMatchScores(
-    const Eigen::ArrayXd & scores, std::vector<std::tuple<double, int, int>> & templates_bits,
+    const Eigen::ArrayXXd & scores, std::vector<std::tuple<double, int, int>> & templates_bits,
     double & white_frame_bits, double & black_frame_bits);
 
-  std::unordered_map<int, std::array<Eigen::ArrayXd, 4>> tag_templates;
-  Eigen::ArrayXd white_frame_mask;
-  Eigen::ArrayXd black_frame_mask;
-  Eigen::ArrayXd payload_mask;
+  std::unordered_map<int, std::array<Eigen::ArrayXXd, 4>> tag_templates;
+  Eigen::ArrayXXd white_frame_mask;
+  Eigen::ArrayXXd black_frame_mask;
+  Eigen::ArrayXXd payload_mask;
 
   std::string tag_family_;
   std::string templates_path_;
