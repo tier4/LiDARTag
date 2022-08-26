@@ -1692,7 +1692,7 @@ int LidarTag::getCodeNaiveHamming(ClusterFamily_t & cluster)
   cluster.rkhs_decoding.template_points_3d = construct3DShapeMarker(
     cluster.rkhs_decoding, cluster.rkhs_decoding.ell);
 
-  int status = hamming_decoding_->decode(cluster.rkhs_decoding.template_points_3d.cast<double>(), cluster.tag_size, 
+  int status = hamming_decoding_->decode(cluster.rkhs_decoding.template_points_3d.cast<double>(), cluster.tag_size,
     cluster.rkhs_decoding.ell, cluster.rkhs_decoding.ell, cluster.rkhs_decoding.id, cluster.rkhs_decoding.rotation_angle);
 
   return status;
@@ -1776,38 +1776,6 @@ bool LidarTag::decodePayload(ClusterFamily_t & cluster)
       RCLCPP_DEBUG_STREAM(get_logger(), "rotation: " << cluster.entry.rotation);
     }
   }
-
-  // Data collection logic
-  //std::ostringstream ss_folder;
-  //std::ostringstream ss_file;
-  //ss_folder << "exp_name/" << cluster.cluster_id << "/" << cluster.rkhs_decoding.rotation_angle;
-  //ss_file << ss_folder.str() << "/" << point_cloud_header_.stamp.sec << " _" << point_cloud_header_.stamp.nanosec / int(10e6) << "_" << old_id << ".pcd";
-  //std::string file_name = ss_file.str();
-
-  //if (!std::filesystem::exists(ss_folder.str()))
-  //{
-  //  std::filesystem::create_directories(ss_folder.str());
-  //}
-
-  //RCLCPP_INFO_STREAM(get_logger(), "rotation: " << cluster.entry.rotation);
-  //pcl::PointCloud<PointXYZRI>::Ptr cloud(new pcl::PointCloud<PointXYZRI>);
-  //cloud->reserve(cluster.rkhs_decoding.template_points_3d.cols());
-
-  //for(int col = 0; col < cluster.rkhs_decoding.template_points_3d.cols(); col++){
-  //  Eigen::VectorXf p_eigen = cluster.rkhs_decoding.template_points_3d.col(col);
-  //  PointXYZRI p_pcl;
-  //  p_pcl.x = p_eigen(0);
-  //  p_pcl.y = p_eigen(1);
-  //  p_pcl.z = p_eigen(2);
-  //  p_pcl.intensity = p_eigen(3);
-
-  //  cloud->push_back(p_pcl);
-  //}
-
-  //RCLCPP_ERROR_STREAM(get_logger(), "template_points rows: " << cluster.rkhs_decoding.template_points_3d.rows());
-  //RCLCPP_ERROR_STREAM(get_logger(), "template_points cols: " << cluster.rkhs_decoding.template_points_3d.cols());
-
-  //pcl::io::savePCDFileASCII (file_name, *cloud);
 
   return valid_tag;
 }

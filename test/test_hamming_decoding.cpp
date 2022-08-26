@@ -29,7 +29,7 @@
 TEST(hamming_decoding, decoding)
 {
   pcl::PointCloud<pcl::PointXYZ>::Ptr input_pointcloud(new pcl::PointCloud<pcl::PointXYZ>);
-  
+
   double min_white_border_bits = 5.0;
   double min_black_boder_bits = 5.0;
   double min_payload_bits = 10.0;
@@ -45,10 +45,10 @@ TEST(hamming_decoding, decoding)
   // data
   int expected_id = 0;
   int expected_orientation = 2;
-  std::string template_path = "/home/kenzolobos/workspace/pilot-auto.x2/src/vendor/lidartag/lib/aip_x2/templates";
-  std::string pointcloud_path = "/home/kenzolobos/workspace/pilot-auto.x2/decoding_database/2022-04-22_x2_glp_moving/camera0/0/2/1650606240 _17_37.pcd";
+  std::string template_path = "templates";
+  std::string pointcloud_path = "pointcloud.pcd";
 
-  auto decoder = std::make_shared<NaiveHammingDecoding>("16", 
+  auto decoder = std::make_shared<NaiveHammingDecoding>("16",
     template_path, min_white_border_bits, min_black_boder_bits,
     min_payload_bits, min_payload_margin,
     intensity_threshold, rbf_sigma,
@@ -57,7 +57,7 @@ TEST(hamming_decoding, decoding)
   pcl::io::loadPCDFile(pointcloud_path, *input_pointcloud);
 
   Eigen::MatrixXd input_matrix(3, input_pointcloud->size());
-  
+
   std::vector<float> pos_intensities;
   std::vector<float> neg_intensities;
 
