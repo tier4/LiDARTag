@@ -82,7 +82,6 @@ bool NaiveHammingDecoding::decode(
   int best_id = std::get<1>(templates_decoded_bits[0]);
   int best_orientation = std::get<2>(templates_decoded_bits[0]);
 
-  //
   if (
     white_frame_bits < min_white_border_bits_ || black_frame_bits < min_black_boder_bits_ ||
     best_score < min_payload_bits_ || best_margin < min_payload_margin_) {
@@ -118,7 +117,7 @@ void NaiveHammingDecoding::loadTemplates()
     tag_templates[id][0] = template_array;
 
     for (int orientation = 1; orientation < 4; orientation++) {
-      
+
       Eigen::MatrixXd aux = template_array;
 
       for(int j = 0; j < aux.cols(); j++)
@@ -206,7 +205,7 @@ void NaiveHammingDecoding::computeMatchScores(
   int max_white_bits = extract_bits_from_array(white_frame_mask);
   int max_back_bits = extract_bits_from_array(black_frame_mask);
   int max_bits = extract_bits_from_array(decoded_mask);
-  
+
   white_frame_bits = extract_bits_from_array(decoded_white_frame_array);
   black_frame_bits = extract_bits_from_array(decoded_black_frame_array);
 
