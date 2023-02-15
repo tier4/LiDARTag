@@ -50,7 +50,7 @@
 #include <lidartag/ultra_puck.hpp>
 
 #include <tf2/utils.h>
-#include <tf2_eigen/tf2_eigen.hpp>
+#include <tf2_eigen/tf2_eigen.h>
 
 #include <math.h>   /* sqrt, pow(a,b) */
 #include <stdlib.h> /* srand, rand */
@@ -62,7 +62,7 @@
 #include <thread>
 #include <iomanip>
 #include <sstream>
-#include <tbb/global_control.h>
+//#include <tbb/global_control.h>
 
 /* CONSTANT */
 #define SQRT2 1.41421356237
@@ -310,8 +310,8 @@ void LidarTag::mainLoop()
 
   int valgrind_check = 0;
 
-  //tbb::task_scheduler_init tbb_init() deprecated;
-  tbb::global_control c(tbb::global_control::max_allowed_parallelism, num_threads_);
+  tbb::task_scheduler_init tbb_init() deprecated;
+  //tbb::global_control c(tbb::global_control::max_allowed_parallelism, num_threads_);
 
   int curr_frame = 0;
   int frame_of_interest = 9;

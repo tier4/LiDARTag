@@ -1031,7 +1031,7 @@ void LidarTag::computeFunctionVectorInnerProductTBBThreadingTBBScheduling(
   const Eigen::ArrayXf y_ary = pc2.row(1).array();
   const Eigen::ArrayXf z_ary = pc2.row(2).array();
   const Eigen::ArrayXf i_ary = pc2.row(3).array();
-  std::atomic<float> score_thread = 0;
+  tbb::atomic<float> score_thread = 0;
 
   Eigen::VectorXf score_vec(num_pc1);
   // std::vector<float> score_vec(num_pc1);
@@ -1156,7 +1156,7 @@ void LidarTag::computeFunctionOriginalInnerProductKDTree(
 
   kd_tree_t mat_index(3 /*dim*/, std::cref(pc2_points), 10 /* max leaf */);
   mat_index.index->buildIndex();
-  std::atomic<float> score_thread = 0;
+  tbb::atomic<float> score_thread = 0;
   // float score_tmp = 0;
   // score = 0;
   tbb::concurrent_vector<float> score_vec;
