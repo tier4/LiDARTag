@@ -63,6 +63,7 @@
 #include <iomanip>
 #include <sstream>
 #include <tbb/global_control.h>
+#include <algorithm>
 
 /* CONSTANT */
 #define SQRT2 1.41421356237
@@ -391,7 +392,8 @@ void LidarTag::mainLoop()
     ordered_pointcloud_markers_.markers.clear();
 
     for (int ring = 0; ring < beam_num_; ++ring) {
-      std::vector<LidarPoints_t>().swap(ordered_buff[ring]);
+      //std::vector<LidarPoints_t>().swap(ordered_buff[ring]);
+      ordered_buff[ring].clear();
     }
 
     point_cloud_size_ = 0;
@@ -1210,11 +1212,15 @@ inline void LidarTag::fillInOrderedPointcloudFromUnorganizedPointcloud(
     assert(("Ring List Error", lidar_system_.angle_list.size() <= beam_num_));
   }
 
-  LidarPoints_t lidar_point;
+  LidarPoints_t lidar_point{};
   int index[beam_num_] = {0};
   std::set<float>::iterator it;
 
   for (auto && p : *pcl_pointcloud) {
+
+    if (std::isnan(p.x) || std::isnan(p.y) || std::isnan(p.z)) {
+      continue;
+    }
 
     if (!has_ring_ && ring_estimated_) {
       float angle = getAnglefromPt(p);
@@ -1229,6 +1235,16 @@ inline void LidarTag::fillInOrderedPointcloudFromUnorganizedPointcloud(
     lidar_point.valid = 1;
     ordered_buff[p.ring].push_back(lidar_point);
     index[p.ring] += 1;
+  }
+
+  if (!has_ring_) {
+    for (auto & ring_points : ordered_buff) {
+      std::sort(ring_points.begin(), ring_points.end());
+
+      for (std::size_t i = 0; i < ring_points.size(); i++) {
+        ring_points[i].index = i;
+      }
+    }
   }
 
   addOrderedPointcloudMarkers(ordered_buff);
@@ -3711,9 +3727,9 @@ void LidarTag::addOrderedPointcloudMarkers(std::vector<std::vector<LidarPoints_t
     if(ring_id != params_.debug_ring_id)
       continue;
 
-    for(int index = 0; index < ordered_buff[ring_id].size(); index++) {
+    for(int index = 0; index < ordered_buff.at(ring_id).size(); index++) {
 
-      auto & point = ordered_buff[ring_id][index];
+      auto & point = ordered_buff.at(ring_id)[index];
 
       visualization_msgs::msg::Marker marker;
 
@@ -3725,9 +3741,9 @@ void LidarTag::addOrderedPointcloudMarkers(std::vector<std::vector<LidarPoints_t
       marker.pose.orientation.y = 0.0;
       marker.pose.orientation.z = 0.0;
       marker.pose.orientation.w = 1.0;
-      marker.scale.x = 0.03;
-      marker.scale.y = 0.03;
-      marker.scale.z = 0.03;
+      marker.scale.x = 0.01;
+      marker.scale.y = 0.01;
+      marker.scale.z = 0.01;
       marker.color.a = 1.0;  // Don't forget to set the alpha!
       marker.color.r = 1.0;
       marker.color.g = 1.0;

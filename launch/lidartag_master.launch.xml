@@ -37,6 +37,7 @@
   <arg name="use_intensity_channel" default="true" />
   <arg name="use_borders_as_corners" default="false" />
   <arg name="beam_number" default="40" />
+  <arg name="has_ring" default="true" />
   <arg name="horizontal_fov" default="360.0" />
   <arg name="use_organized_pointcloud" default="false" />
 
@@ -77,7 +78,11 @@
   <group>
     <push-ros-namespace namespace="lidartag" />
     <!-- valgrind /-/-tool=callgrind /-/-callgrind-out-file='callgrind.lidar_tag.%p'  -->
+    <!--node pkg="lidartag" launch-prefix="xterm -e valgrind -tool=memcheck" exec="lidartag_main" name="lidartag_main" output="screen" -->
+    <!--node pkg="lidartag" launch-prefix="valgrind -\-tool=memcheck -\-track-origins=yes -\-vgdb-error=0" exec="lidartag_main" name="lidartag_main" output="screen" -->
     <node pkg="lidartag" exec="lidartag_main" name="lidartag_main" output="screen" >
+    
+
 
       <remap from="pointcloud_input" to="$(var pointcloud_topic)" />
       <param name="use_intensity_channel" value="$(var use_intensity_channel)" />
@@ -113,7 +118,7 @@
       <param name="vertical_fov" value="40.0" /> <!-- unused -->
       <param name="use_organized_pointcloud" value="$(var use_organized_pointcloud)" />
       <param name="num_accumulation" value="1" />
-      <param name="has_ring" value="true" />
+      <param name="has_ring" value="$(var has_ring)" />
       <param name="estimate_ring" value="true" />
 
 
