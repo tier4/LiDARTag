@@ -41,7 +41,7 @@
     <arg name="use_intensity_channel" value="$(var use_intensity_channel)" />
     <arg name="beam_number" value="128" />
     <arg name="has_ring" value="false" />
-    <arg name="horizontal_fov" value="120.0" /> <!-- Comment: This is solid state lidar with a reduced fov compared with traditional mechanical lidars https://www.hesaitech.com/product/at128/ -->
+    <arg name="horizontal_fov" value="120.0" /> <!-- Comment: This is solid state lidar with a reduced fov compared with traditional mechanical lidars -->
     <arg name="payload_intensity_threshold" value="0.1" /> <!-- Comment: Under some conditions the intensity from the sensor is not reliable so we have to relax this parameter quite a lot -->
 
     <!-- list for marker sizes -->
@@ -50,7 +50,7 @@
     <!-- Tunable for PoI clustering -->
     <arg name="nearby_factor" value="4.0" />
     <arg name="linkage_tunable" value="0.15" /> <!-- Comment: this is needed due to the higher resolution of the lidar combined with the tag mount. May not be needed otwherwise -->
-    <arg name="linkage_ring_max_dist" value="4" /> <!-- Comment:  This parameter was left the same as the AT128. We actually need to adjust it later -->
+    <arg name="linkage_ring_max_dist" value="4" /> <!-- Comment:  This parameter was left the same as a similar sensor. We actually need to adjust it later -->
     <!-- SQRT2 / 4 ==  0.35355339059-->
     <arg name="clearance" value="0.35355339059" />
     <arg name="optimize_percentage" value="30.0" />
