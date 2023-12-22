@@ -862,7 +862,42 @@ std::vector<std::vector<LidarPoints_t>> LidarTag::getOrderBuff()
 
   // Convert to sensor_msg to pcl type
   pcl::PointCloud<PointXYZRI>::Ptr pcl_pointcloud(new pcl::PointCloud<PointXYZRI>);
-  pcl::fromROSMsg(*msg, *pcl_pointcloud);
+
+  // Check if we need to transform the pointcloud due to the intensity
+  bool is_intensity_uint = std::any_of(msg->fields.cbegin(), msg->fields.cend(), [](const auto & field) { return field.name == "intensity" && field.datatype == sensor_msgs::msg::PointField::UINT8; });
+
+  //for (const auto & field : msg->fields) {
+  //  std::cout << "Field: " << field.name << " type=" << static_cast<int>(field.datatype) << std::endl; 
+  //}
+
+  if (is_intensity_uint) {
+    //std::cout << "Detected conversion" << std::endl << std::flush;
+    pcl::PointCloud<PointXYZRIu>::Ptr pcl_pointcloud_aux(new pcl::PointCloud<PointXYZRIu>);
+    pcl::fromROSMsg(*msg, *pcl_pointcloud_aux);
+
+    pcl_pointcloud->resize(pcl_pointcloud_aux->size());
+    auto it_in = pcl_pointcloud_aux->points.begin();
+    auto it_out = pcl_pointcloud->points.begin();
+    while (it_in != pcl_pointcloud_aux->points.end()) {
+      it_out->x = it_in->x;
+      it_out->y = it_in->y;
+      it_out->z = it_in->z;
+      it_out->ring = it_in->ring;
+      it_out->intensity = static_cast<float>(it_in->intensity);
+      it_in++;
+      it_out++;
+    }
+    
+  } else {
+    pcl::fromROSMsg(*msg, *pcl_pointcloud);
+  }
+
+  if (pcl_pointcloud->size() < 100) {
+    return vector<vector<LidarPoints_t>>{};
+  }
+
+  
+  
 
   // Debug force not use intensity
   if (!params_.use_intensity_channel) {
@@ -1151,6 +1186,7 @@ void LidarTag::publishPointcloud(
 void LidarTag::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr pc)
 {
   lidar_frame_ = pc->header.frame_id;
+  
 
   // flag to make sure it receives a pointcloud
   // at the very begining of the program

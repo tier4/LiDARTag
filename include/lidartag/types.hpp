@@ -49,6 +49,14 @@ namespace pcl
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW     // ensure proper alignment
   } EIGEN_ALIGN16;
 
+  struct PointXYZIuR
+  {
+    PCL_ADD_POINT4D;                    // quad-word XYZ
+    uint8_t    intensity;                 ///< laser intensity reading
+    uint16_t ring;                      ///< laser ring number
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW     // ensure proper alignment
+  } EIGEN_ALIGN16;
+
 }; // namespace pcl
 
 
@@ -59,8 +67,16 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(pcl::PointXYZIR,
                                   (float, intensity, intensity)
                                   (uint16_t, ring, ring))
 
+POINT_CLOUD_REGISTER_POINT_STRUCT(pcl::PointXYZIuR,
+                                  (float, x, x)
+                                  (float, y, y)
+                                  (float, z, z)
+                                  (uint8_t, intensity, intensity)
+                                  (uint16_t, ring, ring))
+
 namespace BipedLab {
 typedef pcl::PointXYZIR PointXYZRI;
+typedef pcl::PointXYZIuR PointXYZRIu;
 typedef struct QuickDecodeEntry {
   uint64_t rcode;    // the queried code
   uint16_t id;       // the tag id (a small integer)
