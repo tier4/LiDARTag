@@ -48,7 +48,7 @@
 #include <lidartag/apriltag_utils.hpp>
 #include <lidartag/utils.hpp>
 #include <lidartag/ultra_puck.hpp>
-
+#include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <tf2/utils.h>
 #include <tf2_eigen/tf2_eigen.hpp>
 
@@ -862,34 +862,87 @@ std::vector<std::vector<LidarPoints_t>> LidarTag::getOrderBuff()
 
   // Convert to sensor_msg to pcl type
   pcl::PointCloud<PointXYZRI>::Ptr pcl_pointcloud(new pcl::PointCloud<PointXYZRI>);
+  pcl_pointcloud->resize(msg->width*msg->height);
 
-  // Check if we need to transform the pointcloud due to the intensity
-  bool is_intensity_uint = std::any_of(msg->fields.cbegin(), msg->fields.cend(), [](const auto & field) { return field.name == "intensity" && field.datatype == sensor_msgs::msg::PointField::UINT8; });
+  bool has_uint_intensity = 
+    std::any_of(msg->fields.cbegin(), msg->fields.cend(), [](const auto & field) { 
+      return field.name == "intensity" && field.datatype == sensor_msgs::msg::PointField::UINT8; });
+  
+  bool has_float_intensity = 
+    std::any_of(msg->fields.cbegin(), msg->fields.cend(), [](const auto & field) { 
+      return field.name == "intensity" && field.datatype == sensor_msgs::msg::PointField::FLOAT32; });
 
-  //for (const auto & field : msg->fields) {
-  //  std::cout << "Field: " << field.name << " type=" << static_cast<int>(field.datatype) << std::endl; 
-  //}
+  bool has_valid_ring =
+    std::any_of(msg->fields.begin(), msg->fields.end(), [](const auto & field) {
+      return field.name == "ring" && field.datatype == sensor_msgs::msg::PointField::UINT16;
+    });
 
-  if (is_intensity_uint) {
-    //std::cout << "Detected conversion" << std::endl << std::flush;
-    pcl::PointCloud<PointXYZRIu>::Ptr pcl_pointcloud_aux(new pcl::PointCloud<PointXYZRIu>);
-    pcl::fromROSMsg(*msg, *pcl_pointcloud_aux);
+  bool has_valid_channel =
+    std::any_of(msg->fields.begin(), msg->fields.end(), [](const auto & field) {
+      return field.name == "channel" && field.datatype == sensor_msgs::msg::PointField::UINT16;
+  });
 
-    pcl_pointcloud->resize(pcl_pointcloud_aux->size());
-    auto it_in = pcl_pointcloud_aux->points.begin();
-    auto it_out = pcl_pointcloud->points.begin();
-    while (it_in != pcl_pointcloud_aux->points.end()) {
-      it_out->x = it_in->x;
-      it_out->y = it_in->y;
-      it_out->z = it_in->z;
-      it_out->ring = it_in->ring;
-      it_out->intensity = static_cast<float>(it_in->intensity);
-      it_in++;
-      it_out++;
+  sensor_msgs::PointCloud2Iterator<float> it_x(*msg, "x");
+  sensor_msgs::PointCloud2Iterator<float> it_y(*msg, "y");
+  sensor_msgs::PointCloud2Iterator<float> it_z(*msg, "z");
+  
+  if (!has_uint_intensity && !has_float_intensity && !has_valid_channel && !has_valid_ring) {
+    for (std::size_t output_index = 0; output_index < pcl_pointcloud->points.size(); ++it_x, ++it_y, ++it_z, output_index++) {
+      PointXYZRI & point = pcl_pointcloud->points[output_index];
+      point.x = *it_x;
+      point.y = *it_y;
+      point.z = *it_z;
+      point.intensity = 0.f;
+      point.ring = 0;
     }
+  } else if (has_valid_ring && has_float_intensity) {
+    sensor_msgs::PointCloud2Iterator<std::uint16_t> it_ring(*msg, "ring");
+    sensor_msgs::PointCloud2Iterator<float> it_float_intensity(*msg, "intensity");
     
-  } else {
-    pcl::fromROSMsg(*msg, *pcl_pointcloud);
+    for (std::size_t output_index = 0; output_index < pcl_pointcloud->points.size(); ++it_x, ++it_y, ++it_z, ++it_ring, ++it_float_intensity, output_index++) {
+      PointXYZRI & point = pcl_pointcloud->points[output_index];
+      point.x = *it_x;
+      point.y = *it_y;
+      point.z = *it_z;
+      point.ring = *it_ring;
+      point.intensity = *it_float_intensity;
+    }
+  } else if (has_valid_ring && has_uint_intensity) {
+    sensor_msgs::PointCloud2Iterator<std::uint16_t> it_ring(*msg, "ring");
+    sensor_msgs::PointCloud2Iterator<std::uint8_t> it_uint_intensity(*msg, "intensity");
+    
+    for (std::size_t output_index = 0; output_index < pcl_pointcloud->points.size(); ++it_x, ++it_y, ++it_z, ++it_ring, ++it_uint_intensity, output_index++) {
+      PointXYZRI & point = pcl_pointcloud->points[output_index];
+      point.x = *it_x;
+      point.y = *it_y;
+      point.z = *it_z;
+      point.ring = *it_ring;
+      point.intensity = static_cast<float>(*it_uint_intensity);
+    }
+  } else if (has_valid_channel && has_float_intensity) {
+    sensor_msgs::PointCloud2Iterator<std::uint16_t> it_channel(*msg, "channel");
+    sensor_msgs::PointCloud2Iterator<float> it_float_intensity(*msg, "intensity");
+    
+    for (std::size_t output_index = 0; output_index < pcl_pointcloud->points.size(); ++it_x, ++it_y, ++it_z, ++it_channel, ++it_float_intensity, output_index++) {
+      PointXYZRI & point = pcl_pointcloud->points[output_index];
+      point.x = *it_x;
+      point.y = *it_y;
+      point.z = *it_z;
+      point.ring = *it_channel;
+      point.intensity = *it_float_intensity;
+    }
+  } else if (has_valid_channel && has_uint_intensity) {
+    sensor_msgs::PointCloud2Iterator<std::uint16_t> it_channel(*msg, "channel");
+    sensor_msgs::PointCloud2Iterator<std::uint8_t> it_uint_intensity(*msg, "intensity");
+    
+    for (std::size_t output_index = 0; output_index < pcl_pointcloud->points.size(); ++it_x, ++it_y, ++it_z, ++it_channel, ++it_uint_intensity, output_index++) {
+      PointXYZRI & point = pcl_pointcloud->points[output_index];
+      point.x = *it_x;
+      point.y = *it_y;
+      point.z = *it_z;
+      point.ring = *it_channel;
+      point.intensity = static_cast<float>(*it_uint_intensity);
+    }
   }
 
   if (pcl_pointcloud->size() < 100) {
