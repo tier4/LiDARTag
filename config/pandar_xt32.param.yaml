@@ -1,0 +1,5 @@
+/**:
+  ros__parameters:
+  
+    beam_number: 32   
+    linkage_tunable: 0.4

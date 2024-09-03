@@ -1,0 +1,6 @@
+/**:
+  ros__parameters:
+
+    beam_number: 128
+    linkage_tunable: 0.25
+    linkage_ring_max_dist: 2 # TODO: This parameter be 1, but our lidar is missing one channel and this work as a hotfix

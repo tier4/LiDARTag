@@ -1,0 +1,9 @@
+/**:
+  ros__parameters:
+
+    use_intensity_channel: false # This lidar does not have intensity
+    use_borders_as_corners: true
+    beam_number: 64
+    linkage_tunable: 0.35
+    optimize_percentage: 15.0 # The optimization starts with a worse initial solution
+    distance_to_plane_threshold: 0.15 # The edges of the tag appear as outliers in this lidar

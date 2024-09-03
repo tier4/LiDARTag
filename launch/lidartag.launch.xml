@@ -33,35 +33,44 @@
 <launch>
 
   <arg name="pointcloud_topic" default="/pointcloud_raw" />
-  <arg name="use_intensity_channel" default="true" />
+  <arg name="tag_size_list" default="[0.8]" />
   
-  <include file="$(find-pkg-share lidartag)/launch/lidartag_master.launch.xml" >
+  <arg name="lidar_model">
+    <choice value="aeva_aeries2"/>
+    <choice value="at128"/>
+    <choice value="innoviz2"/>
+    <choice value="ouster_os1_128"/>
+    <choice value="ouster_os2"/>
+    <choice value="pandar_40p"/>
+    <choice value="pandar_64"/>
+    <choice value="pandar_qt"/>
+    <choice value="pandar_xt32"/>
+    <choice value="robosense_m1"/>
+    <choice value="seyond_falcon"/>
+    <choice value="seyond_robin_w"/>
+    <choice value="velodyne_vlp16"/>
+    <choice value="velodyne_vls128"/>
+  </arg>
 
-    <arg name="pointcloud_topic" value="$(var pointcloud_topic)" />
-    <arg name="use_intensity_channel" value="$(var use_intensity_channel)" />
-    <arg name="beam_number" value="64" />
-    <!--arg name="payload_intensity_threshold" value="0.001"/-->
-    <arg name="use_organized_pointcloud" value="true"/>
+  <!-- LidarTag node -->
+  <group>
+    <push-ros-namespace namespace="lidartag" />
+    <!-- valgrind /-/-tool=callgrind /-/-callgrind-out-file='callgrind.lidar_tag.%p'  -->
+    <!--node pkg="lidartag" launch-prefix="xterm -e valgrind -tool=memcheck" exec="lidartag_main" name="lidartag_main" output="screen" -->
+    <!--node pkg="lidartag" launch-prefix="valgrind -\-tool=memcheck -\-track-origins=yes -\-vgdb-error=0" exec="lidartag_main" name="lidartag_main" output="screen" -->
+    <node pkg="lidartag" exec="lidartag_main" name="lidartag_main" output="screen" >
+    
+      <remap from="pointcloud_input" to="$(var pointcloud_topic)" />
 
-    <!-- list for marker sizes -->
-    <arg name="tag_size_list" value="[0.61]" />
+      <param from="$(find-pkg-share lidartag)/config/base.param.yaml"/>
+      <param from="$(find-pkg-share lidartag)/config/$(var lidar_model).param.yaml"/>
 
-    <!-- Tunable for PoI clustering -->
-    <arg name="nearby_factor" value="4.0" />
-    <arg name="linkage_tunable" value="0.22" />
+      <!-- Path for Analysis Files -->
+      <param name="library_path" value="$(find-pkg-share lidartag)/lib/decoding_templates/"/>
+      <param name="outputs_path" value="$(find-pkg-share lidartag)/outputs/"/>
 
-    <!-- SQRT2 / 4 ==  0.35355339059-->
-    <arg name="clearance" value="0.35355339059" />
+      <param name="tag_size_list" value="$(var tag_size_list)"/>
+    </node>
 
-    <!-- Tunable for cluster validation -->
-    <arg name="max_outlier_ratio" value="0.25" />
-
-    <arg name="cluster_min_index" value="0" />
-    <arg name="cluster_max_index" value="10000" />
-    <arg name="cluster_min_points_size" value="0" />
-    <arg name="cluster_max_points_size" value="10000" />
-    <arg name="pcl_visualize_cluster" value="false" />
-
-  </include>
-
+  </group>
 </launch>

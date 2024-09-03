@@ -1,0 +1,6 @@
+/**:
+  ros__parameters:
+  
+    beam_number: 64
+    use_organized_pointcloud: true
+    linkage_tunable: 0.22

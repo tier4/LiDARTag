@@ -1,0 +1,6 @@
+/**:
+  ros__parameters:
+
+    beam_number: 64    
+    linkage_tunable: 0.35
+    cluster_check_max_points: false
