@@ -1,0 +1,10 @@
+/**:
+  ros__parameters:
+  
+    beam_number: 128
+    has_ring: false 
+    horizontal_fov: 120.0 # This is solid state lidar with a reduced fov compared with traditional mechanical lidars
+    payload_intensity_threshold: 0.1 # Under some conditions the intensity from the sensor is not reliable so we have to relax this parameter quite a lot
+    linkage_tunable: 0.25 # This is needed due to the higher resolution of the lidar combined with the tag mount. May not be needed otwherwise
+    linkage_ring_max_dist: 4 # This parameter was left the same as a similar sensor. We actually need to adjust it later
+    

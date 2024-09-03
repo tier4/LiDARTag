@@ -1,0 +1,7 @@
+/**:
+  ros__parameters:
+  
+    beam_number: 128
+    use_organized_pointcloud: true
+    nearby_factor: 2.0
+    linkage_tunable: 0.22

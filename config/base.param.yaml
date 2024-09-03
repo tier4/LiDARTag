@@ -1,0 +1,149 @@
+/**:
+  ros__parameters:
+
+    use_intensity_channel: true
+    use_borders_as_corners: false
+
+    # General parameters
+
+    # System Mode
+    mark_cluster_validity: true
+    plane_fitting: true
+    optimize_pose: true
+    decode_id: true
+    collect_data: 0
+    num_threads: 12
+    print_info: false
+
+    # Debugging Mode
+    debug_info: false
+    debug_time: false
+    debug_decoding_time: false
+    log_data: false
+
+    # LiDAR System
+    max_queue_size: 1
+    beam_number: 40
+    horizontal_fov: 360.0 # degrees
+    vertical_fov: 40.0 # unused
+    use_organized_pointcloud: false
+    num_accumulation: 1
+    has_ring: true
+    estimate_ring: true
+
+    # Tag Family
+    tag_family: 16
+    black_border: 1
+    num_codes: 5
+
+    # Solvers for Pose Optimization
+    optimization_solver: 3 # 8
+    euler_derivative: true
+    optimize_up_bound: 0.8
+    optimize_low_bound: 0.8
+
+    # Decode Method
+    decode_method: 3
+    decode_mode: 5
+    min_rkhs_score: 3.0 # the default is 12.0
+
+    # Visulization
+    sleep_to_display: 1
+    sleep_time_for_visulization: 0.1
+
+    # ========= Tunable (usually they don't need to be changed) =========
+    # Tunable for PoI clustering
+    distance_bound: 20.0
+    depth_bound: 0.3
+    num_points_for_plane_feature: 1
+
+    # Tunable for cluster validation
+    # 2*16 in this case, stands for expects 2 points for each cell
+    min_retrun_per_grid: 0
+    optimize_percentage: 20.0 # 10.0. Regulates how much it can deviate from the initial solution
+    payload_intensity_threshold: 1.0
+    points_threshold_factor: 1.5
+    distance_to_plane_threshold: 0.05 # 0.05 Determines outliers for the plane ransac -->
+    minimum_ring_boundary_points: 1
+    tagsize_tunable: 0.1
+    coa_tunable: 0.75
+
+    # Calibration
+    calibration: false
+    distance_threshold: 12.0
+
+    # Debugging and visulization
+    number_points_ring: 20
+    adaptive_thresholding: 0
+    valgrind_check: 0
+
+    # ============ NOT USED SO FAR =========
+    fine_cluster_threshold: 20
+    fill_in_max_points_threshold: 4500
+    line_intensity_bound: 1000.0
+    intensity_bound: 2.0
+    write_csv: true
+    fill_in_gap_threshold: 400
+
+    # Network
+    latest_model: '-17655'
+    weight_path: /weight/
+    max_points_on_payload: 450
+    xyzri: 4
+
+    # Parameters for old decoding methods
+    max_decode_hamming: 2
+    assign_id: 0010111011100111UL
+
+    # To add to the giant hash table as well as request messive memory
+    tag_hamming_distance: 5
+
+    # For weighted Gaussian decoding
+    grid_viz: 1
+
+    # For naive decoding
+    fake_data: 0
+    
+    # Tunable for PoI clustering
+    nearby_factor: 4.0
+    linkage_tunable: 0.25 # This parameter is the one most likely to be changed lidar to lidar
+    linkage_ring_max_dist: 1
+
+    # Tunable for cluster validation
+    max_outlier_ratio: 0.25
+
+    cluster_min_index: 0
+    cluster_max_index: 10000
+    cluster_min_points_size: 0
+    cluster_max_points_size: 10000
+    cluster_check_max_points: true
+    
+    # Debug pipeline to isolate a single cluster / point
+    debug_single_pointcloud: false
+    debug_point_x: 0.12678179144859314
+    debug_point_y: -11.972125053405762
+    debug_point_z: -5.0
+    debug_cluster_id: -1
+    debug_ring_id: -1
+    debug_scan_id: -1
+
+    pcl_visualize_cluster: false
+    clearance: 0.35355339059 # Default value corresponds to sqrt(2)/4 -> Geometrical meaning. Added as a debug variable
+    optional_fix_cluster: true
+
+    use_rectangle_model: true
+    rectangle_model_use_ransac: true
+    rectangle_model_max_iterations: 50
+    rectangle_model_max_error: 0.03
+    rectangle_fix_point_groups: true
+    refine_cluster_with_intersections: true # have not checked its effect on the fine points of calibration
+
+
+    # Basic hamming decoding parameters. They usually are common to most lidars and setups
+    hamming_decoding_min_white_border_bits: 5.0
+    hamming_decoding_min_black_boder_bits: 5.0
+    hamming_decoding_min_payload_bits: 10.0
+    hamming_decoding_min_payload_margin: 2.0
+    hamming_decoding_intensity_threshold: 0.5
+    hamming_decoding_rbf_sigma: 0.25
+    hamming_decoding_decoding_bit_threshold: 0.6

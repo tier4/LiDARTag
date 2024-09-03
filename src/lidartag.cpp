@@ -477,7 +477,6 @@ void LidarTag::getParameters() {
   this->declare_parameter<bool>("estimate_ring");
   this->declare_parameter<int>("adaptive_thresholding");
   this->declare_parameter<int>("collect_data");
-  this->declare_parameter<std::string>("pointcloud_topic");
   this->declare_parameter<int>("max_queue_size");
   this->declare_parameter<int>("beam_number");
   this->declare_parameter<int>("tag_family");
