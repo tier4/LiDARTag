@@ -61,6 +61,7 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(pcl::PointXYZIR,
 
 namespace BipedLab {
 typedef pcl::PointXYZIR PointXYZRI;
+
 typedef struct QuickDecodeEntry {
   uint64_t rcode;    // the queried code
   uint16_t id;       // the tag id (a small integer)
@@ -139,6 +140,28 @@ typedef struct LiDARSystem {
 
 // Struture for LiDAR PointCloud with index
 typedef struct LiDARPoints {
+
+  inline int quad() const
+  {
+    if (point.x < 0 && point.y < 0){
+        return 0;
+    }
+    else if (point.x >= 0 && point.y < 0){
+        return 1;
+    }
+    if (point.x >= 0 && point.y >= 0){
+        return 2;
+    }
+    else { //  (p.x < 0 && p.y >= 0)
+        return 3;
+    }
+  }
+
+  bool operator<(const LiDARPoints & other) const
+  {
+    return quad() == other.quad() ? point.x * other.point.y > point.y * other.point.x : quad() < other.quad();
+  };
+
   PointXYZRI point;
   int index;
   int valid;
