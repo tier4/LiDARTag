@@ -50,6 +50,7 @@
     <choice value="seyond_robin_w"/>
     <choice value="velodyne_vlp16"/>
     <choice value="velodyne_vls128"/>
+    <choice value="ot128"/>
   </arg>
 
   <!-- LidarTag node -->
