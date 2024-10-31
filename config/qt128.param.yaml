@@ -1,1 +1,15 @@
-/home/kenzolobos/workpace/operation_tools_fork/src/vendor/lidartag/config/velodyne_vls128.param.yaml
+/**:
+  ros__parameters:
+
+    beam_number: 128
+    linkage_tunable: 0.25
+    linkage_ring_max_dist: 2
+    
+    # The intensity of the QT128 is better than the old QT, but still not great
+    hamming_decoding_min_white_border_bits: 5.0
+    hamming_decoding_min_black_boder_bits: 5.0
+    hamming_decoding_min_payload_bits: 8.0
+    hamming_decoding_min_payload_margin: 1.5
+    hamming_decoding_intensity_threshold: 0.5
+    hamming_decoding_rbf_sigma: 0.25
+    hamming_decoding_decoding_bit_threshold: 0.6
