@@ -942,6 +942,28 @@ std::vector<std::vector<LidarPoints_t>> LidarTag::getOrderBuff()
       point.ring = *it_channel;
       point.intensity = static_cast<float>(*it_uint_intensity);
     }
+  } else if (has_float_intensity) {
+    sensor_msgs::PointCloud2Iterator<float> it_float_intensity(*msg, "intensity");
+
+    for (std::size_t output_index = 0; output_index < pcl_pointcloud->points.size(); ++it_x, ++it_y, ++it_z, ++it_float_intensity, output_index++) {
+      PointXYZRI & point = pcl_pointcloud->points[output_index];
+      point.x = *it_x;
+      point.y = *it_y;
+      point.z = *it_z;
+      point.ring = 0;
+      point.intensity = *it_float_intensity;
+    }
+  } else if (has_uint_intensity) {
+    sensor_msgs::PointCloud2Iterator<std::uint8_t> it_uint_intensity(*msg, "intensity");
+
+    for (std::size_t output_index = 0; output_index < pcl_pointcloud->points.size(); ++it_x, ++it_y, ++it_z, ++it_uint_intensity, output_index++) {
+      PointXYZRI & point = pcl_pointcloud->points[output_index];
+      point.x = *it_x;
+      point.y = *it_y;
+      point.z = *it_z;
+      point.ring = 0;
+      point.intensity = static_cast<float>(*it_uint_intensity);
+    }
   }
 
   if (pcl_pointcloud->size() < 100) {
