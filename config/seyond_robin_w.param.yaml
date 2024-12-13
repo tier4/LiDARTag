@@ -5,14 +5,15 @@
     has_ring: false
     horizontal_fov: 120.0 # This is solid state lidar with a reduced fov compared with traditional mechanical lidars
     payload_intensity_threshold: 0.04 # Under some conditions the intensity from the sensor is not reliable so we have to relax this parameter quite a lot
+    cluster_check_max_points: false
 
     linkage_tunable: 0.12 # This is needed due to the higher resolution of the lidar combined with the tag mount. May not be needed otwherwise
     linkage_ring_max_dist: 4 #  This parameter was left the same as a similar sensor. We actually need to adjust it later
 
-    hamming_decoding_min_white_border_bits: 5.0
-    hamming_decoding_min_black_boder_bits: 5.0
-    hamming_decoding_min_payload_bits: 8.0
+    hamming_decoding_min_white_border_bits: 0.0
+    hamming_decoding_min_black_boder_bits: 0.0
+    hamming_decoding_min_payload_bits: 7.0
     hamming_decoding_min_payload_margin: 1.5
     hamming_decoding_intensity_threshold: 0.5
     hamming_decoding_rbf_sigma: 0.25
-    hamming_decoding_decoding_bit_threshold: 0.6
+    hamming_decoding_decoding_bit_threshold: 0.4
