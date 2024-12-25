@@ -82,23 +82,25 @@ bool NaiveHammingDecoding::decode(
   int best_id = std::get<1>(templates_decoded_bits[0]);
   int best_orientation = std::get<2>(templates_decoded_bits[0]);
 
-  std::cout << "decoded_id: " << decoded_id << " | decoded_orientation: " << decoded_orientation << std::endl << std::flush;
-  decoded_id = 0;
-  decoded_orientation = 1;
-  return true;
+  // std::cout << "decoded_id: " << decoded_id << " | decoded_orientation: " << decoded_orientation << std::endl << std::flush;
+  // // decoded_id = 0;
+  // // decoded_orientation = 1;
+  // decoded_id = 4;
+  // decoded_orientation = 3;
+  // return true;
 
-//  if (
-//    white_frame_bits < min_white_border_bits_ || black_frame_bits < min_black_boder_bits_ ||
-//    best_score < min_payload_bits_ || best_margin < min_payload_margin_) {
-//    return false;
-//  }
-//
-//  decoded_id = best_id;
-//  decoded_orientation = best_orientation;
-//
-//  std::cout << "decoded_id: " << decoded_id << " | decoded_orientation: " << decoded_orientation << std::endl << std::flush;
-//
-//  return true;
+  if (
+    white_frame_bits < min_white_border_bits_ || black_frame_bits < min_black_boder_bits_ ||
+    best_score < min_payload_bits_ || best_margin < min_payload_margin_) {
+    return false;
+  }
+
+  decoded_id = best_id;
+  decoded_orientation = best_orientation;
+
+  std::cout << "decoded_id: " << decoded_id << " | decoded_orientation: " << decoded_orientation << std::endl << std::flush;
+
+  return true;
 }
 
 void NaiveHammingDecoding::loadTemplates()
