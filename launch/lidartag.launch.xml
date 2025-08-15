@@ -70,7 +70,7 @@
 
       <!-- Path for Analysis Files -->
       <param name="library_path" value="$(find-pkg-share lidartag)/lib/decoding_templates/"/>
-      <param name="outputs_path" value="$(find-pkg-share lidartag)/outputs/"/>
+      <param name="outputs_path" value="/tmp/"/>
 
       <param name="tag_size_list" value="$(var tag_size_list)"/>
     </node>
