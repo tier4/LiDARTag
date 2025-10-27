@@ -45,7 +45,9 @@
     <choice value="pandar_64"/>
     <choice value="pandar_qt"/>
     <choice value="pandar_xt32"/>
+    <choice value="robosense_e1"/>
     <choice value="robosense_m1"/>
+    <choice value="robosense_m1_plus"/>
     <choice value="seyond_falcon"/>
     <choice value="seyond_robin_w"/>
     <choice value="velodyne_vlp16"/>

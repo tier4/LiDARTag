@@ -1,0 +1,11 @@
+/**:
+  ros__parameters:
+    
+    beam_number: 144 # 一旦 E1R のライン数に合わせている
+    has_ring: false
+    horizontal_fov: 120.0
+    payload_intensity_threshold: 0.1 # 一旦 M1 の設定に合わせている
+
+    linkage_tunable: 0.15 # 一旦 M1 の設定に合わせている
+    linkage_ring_max_dist: 4 # 一旦 M1 の設定に合わせている
+    
